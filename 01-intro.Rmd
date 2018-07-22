@@ -1,7 +1,5 @@
 ---
-title: "Introduction"
-author: "Adi Sarid/Sarid Research LTD."
-date: "22 ביולי 2018"
+title: "מבוא"
 output: html_document
 ---
 
@@ -25,28 +23,131 @@ h3 {
 h4 {
   direction: rtl;
 }
+
+ul {
+  direction: rtl;
+}
 ```
+
+מדעי הנתונים (או Data Science) כפי שנקרא המונח בשפה המקצועית, מערב תחומי מדע שונים, לדוגמה: מתמטיקה, סטטיסטיקה, מדעי המחשב, הנדסת תעשיה, ועוד.
+
+התחום הפך למבוקש מאוד בשנים האחרונות, בעיקר לאור ההצטברות של מסות של נתונים, לדוגמה מפעולות אוטומטיות שקורות באופן שקוף למשתמש - כשאנחנו מדפדפים באפליקציה, מבצעים רכישה, או סתם מבקרים באתר החדשות המועדף עלינו.
+
+כל פעולה שלנו מתועדת והופכת לנתונים, שמהם אפשר להפיק תובנות שיכולות לשמש כדי להניע אותנו, המשתמשים, לפעולה מסוימת (לדוגמה לרכישה של מוצרים, ביקור במסעדה מסוימת), או כדי לשפר וליצור תהליכים ומוצרים (לדוגמה: הנחיות ניווט עם מסלול מיטבי הביתה, או אפילו רכב אוטונומי שיקח אותנו לשם).
+
+מדעי הנתונים היא קבוצה רחבה של כלים ושיטות שנועדו לתמוך אותנו בניתוח הנתונים, הפיכתם לתובנות, והטמעה של הכלים בסביבות עבודה (Production), המאפשרים קבלת החלטות בזמן אמת וללא התערבות אדם (Automation).
+
+לצורך כך, נדרשים כלים ובעלי מקצוע שיכולים להפעיל את הכלים. הקורס הזה הוא קורס מעשי ולא תיאורתי, כלומר הוא דן בכלים עצמם ומניח שהידע התיאורתי קיים, ברמה מסוימת. הוא אינו קורס בסטטיסטיקה או במדעי הנתונים, והוא אינו שם דגש על התיאוריה הסטטיסטית או האלגוריתמית שמאחורי הפקודות אלא בעיקר על הטכניקה - איך לממש את התיאוריה באמצעות R.
+
+לכן, הקורס יתאים במיוחד לאלו שיש להם רקע כלשהו בתחום רלוונטי, לדוגמה:
+
+   * מדעי המחשב
+   * מתמטיקה
+   * סטטיסטיקה
+   * הנדסת תעשייה
+   * מי ששולט בשפה מסוימת למדעי הנתונים (לדוגמה Python), ומעוניין להכיר טוב יותר גם את R.
+   * הקורס יכול להתאים גם למי שמעוניין בחשיפה ראשונית לתחום מדעי הנתונים - מנקודת מבט טכנית-תכנותית.
+
+הקורס משלב את הטכניקה עם הרבה דוגמאות מהעולם העסקי והאקדמי. מי שמעוניין להשלים גם ידע תיאורתי רלוונטי, יכול להיעזר בספר המעולה הבא (ובעוד ספרים שזמינים ברשת):
+
+   * The Elements of Statistical Learning: Data Mining, Inference, and Prediction, Second Edition, by T. Hastie, J, Friedmand, and R. Tibshirani. Springer, 2009. Available online (free ebook).
+
+הקורס נוגע בנושאים מגוונים: 
+
+   * החל מאיך נראה "יומו של מדען הנתונים" והמיומנויות הנדרשות והמצופות ממדען נתונים, דרך דוגמאות לשימושים שונים של מדעי הנתונים. 
+   * פרק "התקנות" שמסביר איך להתקין את הכלים הנדרשים. 
+   * פרק על `tidyverse` - קבוצת חבילות ופקודות שנועדו להכנת נתונים ותמרון מבני נתונים. 
+   * קריאת (יבוא) נתונים ממקורות חיצוניים.
+   * כלי הצגת נתונים (`ggplot2`). 
+   * מידול של נתונים הכולל: רגרסיה לינארית, רגרסיות מוכללות, בחירת משתנים (Variable selection), וצמצום מימדים (Dimension reduction).
+   * סיווג (Classification) של תצפיות, באמצעות עצי החלטה (Classification and regression trees), יערות אקראיים (Random forests), אלגוריתמי שכנות (k-NN), ומכונות וקטור תומך (Support vector machines).
+   * קטלוג (Clustering), באמצעות `kmeans`.
+   * כלים להעמקה: שימוש ב-Cheatsheets, תחרויות (kaggle), ומקורות נוספים.
+   * רקע ראשוני בנושאים מתקדמים כגון: בניית אפליקציות רשת באמצעות חבילת `shiny`, תיעוד באמצעות `rmarkdown`, אוטומציה של קריאת נתונים מהרשת (Scraping), והתממשקות ל-Web APIs, הקמת שרת R בענן.
+   
+   
+אגב, הקורס עצמו כתוב ב-R כולו (חבילת RMarkdown).
+להתחלת הקורס מומולץ להתקין את הגרסאות האחרונות של [R](https://cran.r-project.org/) ו-[RStudio](https://www.rstudio.com/).
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## יומו של "מדען הנתונים"
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+מה מתאים יותר מלהתחיל קורס כזה עם תרשים שמתאר איך מדען נתונים מבלה את יום העבודה שלו, קרי, מהן הפעולות שמבצע מדען הנתונים?
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+הנתונים הבאים לקוחים מתוך סקר של אתר [kaggle](https://www.kaggle.com), אתר שבו מתפרסמות תחרויות בתחום.
 
-```{r cars}
-summary(cars)
+האתר ערך סקר בין קהילת הרשומים שבו, נכון שישנה הטיה מסוימת מעצם הסתכלות רק על קהילת הרשומים באתר, אבל התוצאות עדיין מעניינות והן מכילות כ-16,000 תגובות.
+
+את הנתונים הגולמיים אפשר להוריד בכתובת:
+[https://www.kaggle.com/kaggle/kaggle-survey-2017](https://www.kaggle.com/kaggle/kaggle-survey-2017)
+
+```{r data-science-actions-read, warning=FALSE, message=FALSE, fig.width=10}
+# data source:
+# Kaggle MK and Data Science Survey, 2017.
+
+# Pre-run this code to have the packages loaded:
+library(tidyverse)
+
+# This is just the data scheme ("codebook")
+kaggle.scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+
+# We are going to need the following fields:
+kaggle.scheme[221:226, 1:2] %>%
+  knitr::kable(format = "pandoc")
+
+# Now to load the actual data:
+kaggle.survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+time.spent <- kaggle.survey17 %>%
+  select(one_of(kaggle.scheme$Column[221:226]))
+time.spent.gathered <- time.spent %>%
+  gather(activity, percent)
+
+# Here's what the data looks like originally
+glimpse(time.spent)
+
+# We actually have just 7500 observations because there are a lot of NAs
+sum(!is.na(time.spent$TimeGatheringData))
+
+# Here's what the data looks like after some munging
+glimpse(time.spent.gathered)
+
+# So now, lets plot the distribution, per item:
+ggplot(time.spent.gathered, aes(x = 
+                                  factor(activity, # set the x
+                                           levels = kaggle.scheme$Column[221:226]), # levels to set order
+                                y = percent)) + # set the y
+  geom_boxplot(fill = "lightblue") + # tell ggplot we want a "boxplot" figure, and with lightblue color
+  ylab("Percent [%]") +  # the caption for y-axis
+  xlab("Activity type") +  # the caption for x-axis
+  coord_cartesian(y = c(0, 100)) + # trim the y axis to avoid some errors (the data set has errors)
+  theme(axis.text.x = element_text(angle = 15, size = 14)) # adjust the angle for x-ticks
+
+ggplot(time.spent.gathered %>% 
+         filter(percent <= 100) %>%
+         group_by(activity) %>% 
+         summarize(mean.percent = mean(percent, na.rm = TRUE)), 
+       aes(x = factor(activity,
+                      levels = kaggle.scheme$Column[221:226]), 
+           y = mean.percent,
+           label = paste0(round(mean.percent, 0), "%"))) + 
+  geom_col(fill = "lightblue", color = "black") + 
+  ylab("Average percent [%]") + 
+  xlab("Activity type") + 
+  geom_label()
+
 ```
 
-## Including Plots
+התרשים הראשון נקרא boxplot, והוא דרך טובה לראות בבת אחת את התפלגות הנתונים. הקו באמצע כל מלבן מציג את החציון, נקודות מציגות ערכי קיצון, והמלבן עצמו תוחם את שני שליש ההתפלגות (רבעון ראשון עד שלישי).
 
-You can also embed plots, for example:
+התרשים השני נקרא barplot והוא מציג את הנתח היחסי של כל פעילות, בממוצע. מן הסתם סכום האחוזים אינו מגיע ל-100% משום שמדובר בממוצע על פני אחוזים.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+התרשימים מלמדים אותנו שחלק מאוד גדול מעבודתו של מדען הנתונים היא סביב איסוף הנתונים וסידור שלהם (בממוצע 33%), לאחר מכן בניית מודלים (21%), הצגת נתונים וחילוץ תובנות (13-14%), ולבסוף, שילוב אלגוריתמים בסביבות תוכנה (11%).
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
