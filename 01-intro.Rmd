@@ -27,6 +27,10 @@ h4 {
 ul {
   direction: rtl;
 }
+
+ol {
+  direction: rtl;
+}
 ```
 
 מדעי הנתונים (או Data Science) כפי שנקרא המונח בשפה המקצועית, מערב תחומי מדע שונים, לדוגמה: מתמטיקה, סטטיסטיקה, מדעי המחשב, הנדסת תעשיה, ועוד.
@@ -48,9 +52,13 @@ ul {
    * מי ששולט בשפה מסוימת למדעי הנתונים (לדוגמה Python), ומעוניין להכיר טוב יותר גם את R.
    * הקורס יכול להתאים גם למי שמעוניין בחשיפה ראשונית לתחום מדעי הנתונים - מנקודת מבט טכנית-תכנותית.
 
-הקורס משלב את הטכניקה עם הרבה דוגמאות מהעולם העסקי והאקדמי. מי שמעוניין להשלים גם ידע תיאורתי רלוונטי, יכול להיעזר בספר המעולה הבא (ובעוד ספרים שזמינים ברשת):
+הקורס משלב את הטכניקה עם הרבה דוגמאות מהעולם העסקי והאקדמי. מי שמעוניין להשלים גם ידע תיאורתי רלוונטי, יכול להיעזר בספר המעולה הבא:
 
    * The Elements of Statistical Learning: Data Mining, Inference, and Prediction, Second Edition, by T. Hastie, J, Friedmand, and R. Tibshirani. Springer, 2009. Available online (free ebook).
+
+ספר מצויין נוסף (ובהרבה מובנים תוכנו מתלכד עם תוכן הקורס) הוא הספר הבא:
+
+   * R for Data Science, by G. Grolemund, and H. Wickham, O'reilly (2017). Available online: (http://r4ds.had.co.nz/)[http://r4ds.had.co.nz/], (feched 26/07/2018).
 
 הקורס נוגע בנושאים מגוונים: 
 
@@ -78,14 +86,28 @@ knitr::opts_chunk$set(echo = TRUE)
 
 מה מתאים יותר מלהתחיל קורס כזה עם תרשים שמתאר איך מדען נתונים מבלה את יום העבודה שלו, קרי, מהן הפעולות שמבצע מדען הנתונים?
 
-הנתונים הבאים לקוחים מתוך סקר של אתר [kaggle](https://www.kaggle.com), אתר שבו מתפרסמות תחרויות בתחום.
+מדען נתונים למעשה עוסק במספר תחומים:
 
-האתר ערך סקר בין קהילת הרשומים שבו, נכון שישנה הטיה מסוימת מעצם הסתכלות רק על קהילת הרשומים באתר, אבל התוצאות עדיין מעניינות והן מכילות כ-16,000 תגובות.
+   * יבוא נתונים
+   * סידור והכנת הנתונים
+   * מחקר
+      * המרה של הנתונים (טרנספורמציה)
+      * ויז'ואליזציה של הנתונים (בתרשימים)
+      * מידול של הנתונים
+   * הפקת תובנות והעברתם הלאה
+   
+אבל כמה זמן לוקחת כל משימה?
+
+הנתונים הבאים לקוחים מתוך סקר של אתר [kaggle](https://www.kaggle.com), אתר שבו מתפרסמות תחרויות בתחום מדעי הנתונים.
+
+האתר ערך סקר בין קהילת הרשומים שבו. ישנה הטיה מסוימת מעצם ההסתכלות רק על קהילת הרשומים באתר, אבל התוצאות עדיין מעניינות והן מכילות אלפי תגובות.
 
 את הנתונים הגולמיים אפשר להוריד בכתובת:
 [https://www.kaggle.com/kaggle/kaggle-survey-2017](https://www.kaggle.com/kaggle/kaggle-survey-2017)
 
-```{r data-science-actions-read, warning=FALSE, message=FALSE, fig.width=10}
+ראשית נטען את הסכמה (Scheme) שמתארת את מבנה הנתונים. אנחנו מציגים פה רק את המשתנים שנשתמש בהם כרגע:
+
+```{r kaggle-scheme, warning=FALSE, message=FALSE, fig.width=10}
 # data source:
 # Kaggle MK and Data Science Survey, 2017.
 
@@ -98,22 +120,31 @@ kaggle.scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
 # We are going to need the following fields:
 kaggle.scheme[221:226, 1:2] %>%
   knitr::kable(format = "pandoc")
+```
 
+עכשיו, נראה איך נראים הנתונים עצמם, המבנה עצמו הוא מבנה "טבלאי":
+
+```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10}
 # Now to load the actual data:
 kaggle.survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
 time.spent <- kaggle.survey17 %>%
   select(one_of(kaggle.scheme$Column[221:226]))
 time.spent.gathered <- time.spent %>%
-  gather(activity, percent)
+  gather(activity, percent) %>%
+  filter(percent >=0 & percent <= 100)
 
 # Here's what the data looks like originally
-glimpse(time.spent)
+time.spent
+```
 
+יש גם לא מעט תצפיות:
+
+```{r, warning=FALSE, message=FALSE, fig.width=10}
 # We actually have just 7500 observations because there are a lot of NAs
 sum(!is.na(time.spent$TimeGatheringData))
 
 # Here's what the data looks like after some munging
-glimpse(time.spent.gathered)
+time.spent.gathered
 
 # So now, lets plot the distribution, per item:
 ggplot(time.spent.gathered, aes(x = 
@@ -125,7 +156,26 @@ ggplot(time.spent.gathered, aes(x =
   xlab("Activity type") +  # the caption for x-axis
   coord_cartesian(y = c(0, 100)) + # trim the y axis to avoid some errors (the data set has errors)
   theme(axis.text.x = element_text(angle = 15, size = 14)) # adjust the angle for x-ticks
+```
 
+התרשים הראשון נקרא boxplot, והוא דרך טובה לראות בבת אחת את התפלגות הנתונים. הקו באמצע כל מלבן מציג את החציון, נקודות מציגות ערכי קיצון, והמלבן עצמו תוחם את שני שליש ההתפלגות (רבעון ראשון עד שלישי).
+
+***
+
+**נקודה למחשבה**
+
+לפני שאתם מתקדמים, נסו להבין את התרשים, ולענות על השאלות הבאות:
+
+   1. איזו משימה שואבת הכי הרבה זמן?
+   2. איזו משימה שואבת הכי פחות זמן?
+   3. איפה יש הכי הרבה שונות בין מדענים שונים?
+   4. למה לדעתכם זה ככה?
+
+***
+
+את אותם הנתונים אפשר לסדר בדרך קצת שונה, בתרשים ששמו barplot
+
+```{r barplot of time spent proportions on activities}
 ggplot(time.spent.gathered %>% 
          filter(percent <= 100) %>%
          group_by(activity) %>% 
@@ -141,12 +191,16 @@ ggplot(time.spent.gathered %>%
 
 ```
 
-התרשים הראשון נקרא boxplot, והוא דרך טובה לראות בבת אחת את התפלגות הנתונים. הקו באמצע כל מלבן מציג את החציון, נקודות מציגות ערכי קיצון, והמלבן עצמו תוחם את שני שליש ההתפלגות (רבעון ראשון עד שלישי).
 
 התרשים השני נקרא barplot והוא מציג את הנתח היחסי של כל פעילות, בממוצע. מן הסתם סכום האחוזים אינו מגיע ל-100% משום שמדובר בממוצע על פני אחוזים.
 
-התרשימים מלמדים אותנו שחלק מאוד גדול מעבודתו של מדען הנתונים היא סביב איסוף הנתונים וסידור שלהם (בממוצע 33%), לאחר מכן בניית מודלים (21%), הצגת נתונים וחילוץ תובנות (13-14%), ולבסוף, שילוב אלגוריתמים בסביבות תוכנה (11%).
+התרשימים מלמדים אותנו שחלק מאוד גדול מעבודתו של מדען הנתונים היא סביב איסוף הנתונים וסידור שלהם (בממוצע 36%), לאחר מכן בניית מודלים (21%), הצגת נתונים וחילוץ תובנות (13%, 14%), ולבסוף, שילוב אלגוריתמים בסביבות תוכנה (11%).
 
+השיעור הבא יעסוק בויז'ואליזציה, ולמה?
+
+   1. זה כיף ומעניין.
+   2. זה חלק מאוד משמעותי מהאפקטיביות של מחקר - ויז'ואליזציה עוזרת לנו למצוא תובנות, לקדם את המחקר ולשדר אותו הלאה.
+   3. זה ייתן לכם מוטיבציה להמשך.
 
 
 
