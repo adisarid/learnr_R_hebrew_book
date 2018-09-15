@@ -196,6 +196,34 @@ ggplot(time.spent.gathered %>%
 
 התרשימים מלמדים אותנו שחלק מאוד גדול מעבודתו של מדען הנתונים היא סביב איסוף הנתונים וסידור שלהם (בממוצע 36%), לאחר מכן בניית מודלים (21%), הצגת נתונים וחילוץ תובנות (13%, 14%), ולבסוף, שילוב אלגוריתמים בסביבות תוכנה (11%).
 
+## מוטיבציה - דוגמאות ושימושים
+
+### בעיות המלצה (recommender systems)
+
+דוגמה של Amazon, ebay, netflix
+
+### סדרות עיתיות וחיזוי (time series forecasting)
+
+דוגמה של מלאים
+
+### הסתברות לרכישה וחיזוי נטישה (estimating conversion probability and churn)
+לקחת דוגמה של Telco מתוך הקישור [חיזוי נטישה Telco](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
+
+### רפואה (Healthcare)
+
+תוחלת החיים עם סרטן המעי הגס [קישור](https://colorectalcancermortalityprediction.shinyapps.io/CRCShiny/)
+
+### דשבורדים (Shinydashboards)
+
+דשבורד שכולו בנוי ב-R [לדוגמה](https://sarid.shinyapps.io/Sarid-Sample-Report/)
+
+## קצת תיאוריה
+
+### איך נראה קובץ נתונים?
+
+### איך נראה מודל?
+
+
 השיעור הבא יעסוק בויז'ואליזציה, ולמה?
 
    1. זה כיף ומעניין.
