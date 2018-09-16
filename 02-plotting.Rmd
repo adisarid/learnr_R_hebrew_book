@@ -1,0 +1,281 @@
+---
+title: "ויז'ואליזציה של נתונים"
+output: html_document
+---
+
+```{css, echo=FALSE}
+p {
+  direction: rtl;
+}
+
+h1 {
+  direction: rtl;
+}
+
+h2 {
+  direction: rtl;
+}
+
+h3 {
+  direction: rtl;
+}
+
+h4 {
+  direction: rtl;
+}
+
+ul {
+  direction: rtl;
+}
+
+ol {
+  direction: rtl;
+}
+```
+
+# בשביל מה?
+
+אחד הכלים החשובים שעומדים לרשותנו כחוקרים הוא ויז'ואליזציה, אבל למה הוא כל כך חשוב?
+
+   * "תמונה שווה אלף מילים" -- לפעמים קשה להבין מטבלאות נתונים, במהירות וביעילות שבה ניתן להבין מגרף
+   * הויז'ואליזציה משמשת אותנו כחוקרים, לצורך העמקה בנתונים
+   * ויז'ואליזציה גם משמשת אותנו כדי "לשדר את הנתונים" הלאה, למקבלי החלטות וללקוחות המחקר שלנו, גם אם אינם בהכרח אנשי מקצוע בתחום הסטטיסטיקה
+   
+בקורס זה נשים דגש על חבילת הגרפיקה `ggplot2` ולא על גרפיקה בסיסית (Base)
+  
+# למה `ggplot2`?
+
+ב-R ישנם כלי ויז'ואליזציה רבים: סטטיים, אינטראקטיביים, ממגוון צורות ואפשרויות. הכלים הבסיסיים ביותר מגיעים עם ההתקנה הבסיסית ביותר ("Base R"), אבל אחד מהכלים השימושיים והנפוצים הוא דווקא חבילה הנקראת `ggplot2`.
+
+מה הופך את חבילת `ggplot2` לכל כך מוצלחת ופופולרית?
+
+   * `ggplot2` מבוססת על תיאוריה מוצקה: the grammer of graphics [provide citation].
+   * ברגע שהבנת את בסיס התיאוריה, הדרך סלולה לשליטה ברמה גבוהה בחבילה זו.
+   * החבילה מאפשרת לייצר את מרבית סוגי הגרפים שניתן לדמיין, תוך הגדרת סטנדרטים של אסטטיקה, אחידות, וסדר הגיוני.
+   * חבילה זו הינה חלק מקבוצת החבילות המכונה tidyverse, המאפשר לשלב פונקציונליות ברמה גבוהה מאוד על שלל החבילות הנכללות בו (עליהן יפורט בפרקים הבאים).
+   
+בשל עובדות אלו, נדלג על גרפיקה של Base R ונקפוץ ישר ללמוד על `ggplot2`.
+
+## התיאוריה: דקדוק גרפי (the grammer of graphics)
+
+יסודות התיאוריה עליהם מבוססת החבילה הונחו במאמר:
+
+   * Cite the grammer of graphics.
+   
+התיאוריה אומרת שכל גרף ניתן לתאר באמצעות פירוקו לגורמים, שכבות שונות. בכל שכבה מיוצגת משמעות סטטיסטית מסוימת, וכל שכבה בנוייה מאסטטיקות שונות:
+
+   * נתונים (data set).
+   * מערכת צירים (קרטיזית xy, פולרית,...).
+   * גיאומטריות (geoms) - אמצעים ויזואליים המתרגמים גדלים לגובה, גודל, צבע, צורה, וכדומה.
+
+נחזור לאחד הגרפים הקודמים שבהם עסקנו בפרק הקודם, כדי להמחיש באמצעות דוגמה.
+
+```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
+library(tidyverse)
+kaggle.scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+# Now to load the actual data:
+kaggle.survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+time.spent <- kaggle.survey17 %>%
+  select(one_of(kaggle.scheme$Column[221:226]))
+time.spent.gathered <- time.spent %>%
+  gather(activity, percent) %>%
+  filter(percent >=0 & percent <= 100)
+
+kaggle_workday_survey <- time.spent.gathered %>% 
+  filter(percent <= 100) %>%
+  group_by(activity) %>% 
+  summarize(mean.percent = mean(percent, na.rm = TRUE)) %>%
+  mutate(activity = factor(activity, levels = kaggle.scheme$Column[221:226]))
+```
+
+השכבה הראשונה בגרף היא שכבת הנתונים. היא לא "מציירת" כלום על המסך מעבר לקנווס ריק, אבל היא מהווה את הבסיס ליתר השכבות.
+
+```{r, detailed-ggplot2-explained1}
+ggplot(kaggle_workday_survey)
+```
+
+בשכבה הבאה אנחנו מוסיפים את העמודות, כאשר לעמודות אלו נפרט "אסטטיקה" של הצירים.
+עבור ציר ה-x האסטטיקה תהא סוג הפעילות, ובעבור צריך ה-y, האסטטיקה תהיה אחוז ממוצע.
+כמו כן, נבקש שהעמודות כולן יצבעו בכחול בהיר, עם מסגרת שחורה.
+הצירים שנחשבים כ"אסטטיקה" מופיעים בתוך הפקודה`aes()`, וכדי לציין שאנחנו מעוניינים בעמודות משתמשים בפקודה `geom_col()`.
+
+שימו לב שבין השכבה הקודמת לשכבה הנוכחית אנחנו משתמשים בסימן החיבור "+", וכמו כן, על הקנווס התווספו אוטומטית צירים, שמות לצירים, כותרות לפעילויות המופיעות בציר x, ומספרים בציר ה-y.
+טווח הצירים נקבע אוטומטית על ידי הפקודה אך ניתן לשינוי.
+
+```{r, detailed-ggplot2-explained2}
+ggplot(kaggle_workday_survey) + 
+  geom_col(fill = "lightblue", 
+           color = "black", 
+           aes(x = activity,
+               y = mean.percent)) 
+```
+
+כעת נוסיף לגרף שכבה נוספת של תוויות שימוקמו בראש העמודות, כדי להקל על הקריאה של הגרף
+
+```{r, detailed-ggplot2-explained3}
+ggplot(kaggle_workday_survey) + 
+  geom_col(fill = "lightblue", 
+           color = "black", 
+           aes(x = activity,
+               y = mean.percent)) + 
+  geom_label(aes(x = activity,
+                 y = mean.percent,
+                 label = paste0(round(mean.percent, 0), "%")))
+  
+```
+
+הדבר האחרון שנותר הוא קצת לייפות את הגרף. נשנה את שמות הצירים ונוסיף כותרת לגרף, באמצעות פקודות השכבות המתאימות.
+
+כמו כן, כדי לקצר קצת את הפקודה, דחפנו את כל האסטטיקות לפקודה המרכזית, היות שהצירים משותפים בין שכבת העמודות לשכבת התווית. הפקודות של השכבות נותרו רק `geom_col(fill = ..., color = ...) + geom_label()`.
+
+```{r detailed-ggplot2-explained4}
+ggplot(kaggle_workday_survey,
+       aes(x = activity,
+           y = mean.percent,
+           label = paste0(round(mean.percent, 0), "%"))) + 
+  geom_col(fill = "lightblue", 
+           color = "black") + geom_label() + 
+  ylab("Average percent [%]") + 
+  xlab("Activity type") + 
+  ggtitle("Activities and their respective proportion of time (average)",
+          subtitle = "Based on kaggle's 2017 survey")
+```
+
+בקצרה ניתן לסכם שכל גרף של ggplot2 יראה בתבנית דומה מאוד לתבנית הבאה:
+
+```
+ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +
+   geom_TYPE(mapping = aes(<MAPPINGS>), stat = <STAT>, position = <POSITION>) +
+   <COORDINATE_FUNCTION> + 
+   <FACE_FUNCTION> + 
+   <SCALE_FUNCTION> + 
+   <THEME_FUNCTION>
+```
+
+כאשר בתבנית לעיל ישנם אלמנטים מסוימים שטרם הסברנו, אך נסביר בהמשך הפרק.
+
+***
+
+### תרגול
+
+בקובץ googleplaystore.csv ישנן כ-11,000 רשומות של אפליקציות מתוך חנות האפליקציות של google.
+הקובץ נוצר באמצעות scraping, טכניקה שבאמצעותה סורקים אתרים ומחלצים מתוכם נתונים לתוך מבנה מסודר וטבלאי, כפי שנמצא בקובץ.
+
+אנו נשתמש בקובץ זה כדי לתרגל צורות שונות של ויז'ואליזציה. 
+עליך להשלים את הפרמטרים המתאימים במקומות שבהם ישנו XXX.
+
+   1. קרא את הקובץ לתוך אובייקט ששמו google_play, הצץ בנתונים באמצעות פונקציית `glimpse`
+      a. איזה משתנים עשויים לייצג את הקטגוריה (סיווג) של האפליקציה?
+      
+
+```
+library(tidyverse)
+google_play <- read_csv(file = XXX)
+glimpse(XXX)
+
+```
+```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
+google_play <- read_csv(file = "02-data/googleplaystore.csv")
+glimpse(google_play)
+```
+
+   2. בנה תרשים שיציג את מספר האפליקציות בכל קטגוריה.
+   סדר את תוויות ציר x שבתרשים בזווית של 45 מעלות כדי שיהיה קל לקרוא אותם.
+      a. לפי איזה סדר מסודרות העמודות שבציר x? (מה הסדר משמאל לימין?)
+      b. מהן שלושת הקטגוריות בהן ישנן הכי הרבה אפליקציות?
+      c. האם אתם מזהים שגיאה בסיווג הקטגוריות? ממה נובעת השגיאה? (רמז: הסתכלו על הקטגוריה הראשונה)
+      d. עדכנו את האובייקט google_play על ידי סינון התצפית החריגה.
+
+```
+ggplot(data = XXX, aes(x = Category)) + 
+  geom_bar(stat = "count") + 
+  theme(axis.title.x = element_text(angle = XXX))
+  
+google_play <- google_play %>%
+   filter(Category != "XXX")
+```
+
+```{r num-apps-googleplaystore, include=FALSE}
+num_apps_chart <- ggplot(google_play, aes(x = Category)) + 
+  geom_bar(stat = "count") + 
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+   3. בנה תרשים שיציג באילו מערכות הפעלה תומכות האפליקציות.
+      a. מה לדעתך גרסת האנדרואיד המעודכנת ביותר הקיימת בשוק, נכון למועד הכנת הקובץ?
+      b. להערכתך, מהן הגרסאות שהוסיפו הכי הרבה יכולות למערכת ההפעלה של אנדרואיד?
+
+```
+ggplot(XXX, aes(x = `Android Ver`)) + 
+  XXX + 
+  theme(axis.text.x = XXX)
+```
+
+```{r android-version, include=FALSE}
+android_ver <- ggplot(google_play, aes(x = `Android Ver`)) + 
+  geom_bar(stat = "count") + 
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+הערה: שימו לב לשימוש במרכאות סביב המשתנה Android Ver. בקובץ המקור שורת ה-header מכילה שם עם רווח. היות שמשתנה לא יכול להכיל רווחים ב-R, כדי להשתמש באותו המשתנה משתמשים בתו המרכאות כדי להקיף את שם המשתנה, וכך R יודע לפרש אותו.
+
+   4. האם יש קשר בין דירוג של אפליקציה לבין מספר המדרגים שלה? בנה תרשים שיסייע לבחון השערה זו. על התרשים להציג את הפיזור של התצפיות (geom_point), כאשר בציר x מספר הביקורות ובציר y הדירוג הממוצע שניתן. כדי לבנות את התרשים באפשרותך להיעזר בגיליון עזר "שליף". ב-RStudio לך לתפריט  Help -> Cheatsheets -> Data Visualization with ggplot2.
+      a. האם קיבלת הודעת אזהרה במהלך הרצת הפקודה? מה משמעות הודעת האזהרה, למה הופיעה?
+      b. באמצעות הפקודה `stat_smooth`. התנסה עם שיטות החלקה מסוגים שונים. באיזו שיטת החלקה היית בוחר? למה?
+      c. *בונוס:* האם ישנה טרנספורמציה מתמטית שניתן להפעיל על ציר ה-x שתאפשר לזהות קשרים חזקים יותר?
+
+```
+ggplot(XXX, aes(XXX, XXX)) + 
+   geom_XXX() + 
+   stat_smooth(method = "XXX")
+```
+
+```{r rating-reviews, include=FALSE}
+rating_reviews_chart <- ggplot(google_play, aes(x = log(Reviews), y = Rating)) + 
+  geom_point() + 
+  stat_smooth()
+```
+
+   5. כעת, חלק את מספר הביקורות שניתנו ל-5 קבוצות שונות, באמצעות הפונקציה `cut`. הצג גרף פיזור של דירוג למול מספר הביקורות, שבו כל קבוצה נצבעת בצבע שונה, על פי הקבוצה אליה היא מתייחסת.
+      a. האם ניתן לזהות קשרים חזקים יותר בטווחים מסוימים?
+
+```
+google_play_groups <- google_play %>%
+  mutate(reviews_groups = cut(Reviews, breaks = c(10^(0:6), max(Reviews) + 1)))
+
+rating_reviews_grouped_chart <- 
+  ggplot(google_play_groups, aes(x = log(Reviews), y = Rating, color = reviews_groups)) + 
+  geom_point() + 
+  stat_smooth(method = "lm")
+```
+
+```{r rating-reviews-groups, include=FALSE}
+google_play_groups <- google_play %>%
+  mutate(reviews_groups = cut(Reviews, breaks = c(10^(0:6), max(Reviews) + 1)))
+
+rating_reviews_grouped_chart <- 
+  ggplot(google_play_groups, aes(x = log(Reviews), y = Rating, color = reviews_groups)) + 
+  geom_point() + 
+  stat_smooth(method = "lm")
+```
+
+   6. הצג תרשים boxplot המשוואה את התפלגות מספר הביקורות בין אפליקציות חינמיות לאפליקציות בתשלום.
+      a. האם ניתן ללמוד משהו מהשוואה זו?
+      b. השתמש בטרנספורמציית log על מספר הביקורות. האם כעת ההשוואה ברורה יותר?
+      c. בצע השוואה של הדירוג הממוצע למול סוג האפליקציה (חינמית/בתשלום). מה ניתן ללמוד מהשוואה זו?
+      
+```
+# now you're on your own... use `geom_boxplot()` and the cheatsheet.
+# use log() for the log transformation in question 6b.
+```
+
+```{r, rating-reviews-price, include=FALSE}
+
+# Omitting a point with NaN in Type
+rating_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = Rating)) + 
+  geom_boxplot()
+
+review_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = log(Reviews))) + 
+  geom_boxplot()
+```
+***
