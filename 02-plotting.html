@@ -174,9 +174,9 @@ ol {
 <p>בשל עובדות אלו, נדלג על גרפיקה של Base R ונקפוץ ישר ללמוד על <code>ggplot2</code>.</p>
 <div id="---the-grammer-of-graphics" class="section level2">
 <h2>התיאוריה: דקדוק גרפי (the grammer of graphics)</h2>
-<p>יסודות התיאוריה עליהם מבוססת החבילה הונחו במאמר:</p>
+<p>יסודות התיאוריה עליהם מבוססת החבילה זמינים במאמר:</p>
 <ul>
-<li>Cite the grammer of graphics.</li>
+<li>A Layered Grammar of Graphics, H. Wickham, <em>Journal of Computational and Graphical Statistics</em>, 2010. Online access: <a href="http://vita.had.co.nz/papers/layered-grammar.pdf" class="uri">http://vita.had.co.nz/papers/layered-grammar.pdf</a></li>
 </ul>
 <p>התיאוריה אומרת שכל גרף ניתן לתאר באמצעות פירוקו לגורמים, שכבות שונות. בכל שכבה מיוצגת משמעות סטטיסטית מסוימת, וכל שכבה בנוייה מאסטטיקות שונות:</p>
 <ul>
@@ -300,7 +300,24 @@ rating_reviews_grouped_chart &lt;-
 <li>בצע השוואה של הדירוג הממוצע למול סוג האפליקציה (חינמית/בתשלום). מה ניתן ללמוד מהשוואה זו?</li>
 </ol></li>
 </ol>
-<pre><code># now you're on your own... use `geom_boxplot()` and the cheatsheet.</code></pre>
+<pre><code># now you're on your own... use `geom_boxplot()` and the cheatsheet.
+# use log() for the log transformation in question 6b.</code></pre>
+<ol start="7" style="list-style-type: decimal">
+<li>דרך חלופית להסתכל על התפלגויות היא באמצעות גרף עמודות הנקרא היסטוגרמה. בסעיף זה נבחן את התפלגות גודל האפליקציה.
+<ol style="list-style-type: lower-alpha">
+<li>השתמש בפונקציה <code>glimpse</code> בשנית כדי להבין מהו המשתנה המתאר את גודל האפליקציה ומה הסוג שלו (מספרי? מחרוזת - טקסט?)</li>
+<li>השתמש בפונקציה <code>str_replace</code> ובפונקציה <code>as.numeric</code> כדי להפוך אותו למספרי.</li>
+<li>בפקודות <code>geom_histogram</code> ו-<code>geom_freqpoly</code> ישנו פרמטר bins. ערך ברירת המחדל שלו הוא 30. נסו לשנות אותו במספרים שונים. על מה הוא משפיע? מה קורה כאשר בוחרים את אותו ערך לשניהם? מה קורה כאשר בוחרים ערך שונה? למה?</li>
+<li>איפה נמצאת “עיקר המסה” מבחינת מרבית האפליקציות - האם הן בעלות נפח גדול או קטן? האם להתפלגות יש זנב “כבד”?</li>
+</ol></li>
+</ol>
+<pre><code>google_play &lt;- google_play %&gt;%
+   mutate(size_app_numeric = as.numeric(str_replace(XXX, &quot;M&quot;, &quot;&quot;))
+   
+ggplot(XXX, aes(XXX)) + 
+   geom_histogram(fill = &quot;lightblue&quot;, bins = XXX) + 
+   geom_freqpoly(size = 1.5, bins = XXX)
+   </code></pre>
 <hr />
 </div>
 </div>

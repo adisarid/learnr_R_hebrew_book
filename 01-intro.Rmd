@@ -202,11 +202,21 @@ ggplot(time.spent.gathered %>%
 
 דוגמה של Amazon, ebay, netflix
 מערכות המלצה משמשות כדי לשפר מצד אחד את השירות שניתן ללקוחות ומצד שני, לגרום להם לבצע יותר רכישות על ידי הצגת מוצרים רלוונטיים.
+![Amazon recommendations](AmazonAlsoBought.jpg)
+![ebay recommendations](EbayFrequentlyBought.jpg)
 
 ### סדרות עיתיות וחיזוי (time series forecasting)
 
 דוגמה של מלאים
 כדי לתכנן מלאי לוגיסטי, צריך קודם כל להעריך את היקף הביקוש (הצריכה). על ידי התאמת מודלים סטטיסטיים של חיזוי ניתן להעריך את היקף הביקוש לחודשים או שנים קדימה, תוך זיהוי מגמות, עונתיות, ותופעות ברות חיזוי אחרות.
+![four examples of time series with different patterns](time-series-examples-fourexamples-1.png)
+
+הדוגמאות מכילות תבניות שונות. מחירי הדירות (שמאל למעלה) מראים מחזוריות של מספר ימים ועונתיות שנתית. חוזים עתידיים של ממשלת ארהב מראים טרנד יורד, וייצור חשמל באוסטרליה (ימין למטה) מצביע על טרנד עולה ועל עונתיות שנתית.
+מחירי המניות אינם מציגים תבנית מסוימת אלא נראים כאקראיים לגמרי (ימין למטה).
+
+דוגמאות אלו אומצו מהספר:
+
+   * Rob J. Hyndman and George Athansasopoulos, Forecasting: Principles and Practice 2nd edition, _OTexts_, 2018. Available Online (feched Sep 2018): [https://otexts.org/fpp2/](https://otexts.org/fpp2/)
 
 ### הסתברות לרכישה וחיזוי נטישה (estimating conversion probability and churn)
 לקחת דוגמה של Telco מתוך הקישור [חיזוי נטישה Telco](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
@@ -218,6 +228,27 @@ ggplot(time.spent.gathered %>%
 ### דשבורדים (Shinydashboards)
 
 דשבורד שכולו בנוי ב-R [לדוגמה](https://sarid.shinyapps.io/Sarid-Sample-Report/)
+
+***
+
+### תרגיל
+
+1. תנו דוגמה לבעיה תחום העיסוק שלכם בעבודה, שעשויה להיפתר באמצעות כלים של Data Science (חיזוי או למידה סטטיטסית)
+
+***
+
+
+## התקנות
+
+לפני שנעבור לחלק הבא, ודאו שעל המחשב מותקן RStudio IDE, ו-R.
+
+לאחר ההתקנה, התקינו את חבילות ה-`tidyverse`. חבילות אלו הינן תוספות המביאות יכולות רבות ל-R, ועל חלקן נלמד בהמשך. בינתיים כדי להתקין אותן פשוט הקישו ב-RStudio:
+
+```
+install.packages("tidyverse")
+```
+
+## השיעור הבא
 
 השיעור הבא יעסוק בויז'ואליזציה, ולמה?
 

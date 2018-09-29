@@ -58,9 +58,9 @@ ol {
 
 ## התיאוריה: דקדוק גרפי (the grammer of graphics)
 
-יסודות התיאוריה עליהם מבוססת החבילה הונחו במאמר:
+יסודות התיאוריה עליהם מבוססת החבילה זמינים במאמר:
 
-   * Cite the grammer of graphics.
+   * A Layered Grammar of Graphics, H. Wickham, _Journal of Computational and Graphical Statistics_, 2010. Online access: [http://vita.had.co.nz/papers/layered-grammar.pdf](http://vita.had.co.nz/papers/layered-grammar.pdf)
    
 התיאוריה אומרת שכל גרף ניתן לתאר באמצעות פירוקו לגורמים, שכבות שונות. בכל שכבה מיוצגת משמעות סטטיסטית מסוימת, וכל שכבה בנוייה מאסטטיקות שונות:
 
@@ -277,5 +277,35 @@ rating_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = Rating)) +
 
 review_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = log(Reviews))) + 
   geom_boxplot()
+```
+
+   7. דרך חלופית להסתכל על התפלגויות היא באמצעות גרף עמודות הנקרא היסטוגרמה. בסעיף זה נבחן את התפלגות גודל האפליקציה.
+      a. השתמש בפונקציה `glimpse` בשנית כדי להבין מהו המשתנה המתאר את גודל האפליקציה ומה הסוג שלו (מספרי? מחרוזת - טקסט?)
+      b. השתמש בפונקציה `str_replace` ובפונקציה `as.numeric` כדי להפוך אותו למספרי.
+      c. בפקודות `geom_histogram` ו-`geom_freqpoly` ישנו פרמטר bins. ערך ברירת המחדל שלו הוא 30. נסו לשנות אותו במספרים שונים. על מה הוא משפיע? מה קורה כאשר בוחרים את אותו ערך לשניהם? מה קורה כאשר בוחרים ערך שונה? למה?
+      d. איפה נמצאת "עיקר המסה" מבחינת מרבית האפליקציות - האם הן בעלות נפח גדול או קטן? האם להתפלגות יש זנב "כבד"?
+      
+```
+google_play <- google_play %>%
+   mutate(size_app_numeric = as.numeric(str_replace(XXX, "M", ""))
+   
+ggplot(XXX, aes(XXX)) + 
+   geom_histogram(fill = "lightblue", bins = XXX) + 
+   geom_freqpoly(size = 1.5, bins = XXX)
+   
+```
+
+```{r size-to-numeric, include=FALSE}
+
+google_play <- google_play %>%
+   mutate(size_app_numeric = as.numeric(str_replace(google_play$Size, "M", "")))
+
+size_app_chart <- ggplot(google_play, aes(size_app_numeric)) + 
+  geom_histogram(fill = "lightblue", color = "black", bins = 40) +
+  geom_freqpoly(size = 1.5, bins = 40)
+
+ggplot(google_play, aes(x = log(Reviews), y = Rating, size = size_app_numeric)) + 
+  geom_point(alpha = 0.1)
+
 ```
 ***
