@@ -1,0 +1,96 @@
+---
+title: "קריאת נתונים, טרנספורמציות, ותכנות פונקציונלי באמצעות tidyverse"
+output: html_document
+---
+
+```{css, echo=FALSE}
+p {
+  direction: rtl;
+}
+
+h1 {
+  direction: rtl;
+}
+
+h2 {
+  direction: rtl;
+}
+
+h3 {
+  direction: rtl;
+}
+
+h4 {
+  direction: rtl;
+}
+
+ul {
+  direction: rtl;
+}
+
+ol {
+  direction: rtl;
+}
+```
+
+## טרנספורמציה של נתונים
+
+כפי שראינו בחלק הראשון חלק ניכר מהעבודה של Data Scientists הוא ניקוי וסידור נתונים.
+חבילות dplyr, tidyr, נבנו כדי לספק סט כלים רחב שמסייע בכלל פעילויות אלו, באופן אינטואיטיבי ויעיל.
+
+ראשית, נטען חבילות אלו ונקרא את קובץ הנתונים עמו עבדנו בפרקים הקודמים.
+
+```{r read-data, warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyr)
+kaggle.survey17 <- readr::read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+
+glimpse(kaggle.survey17)
+
+```
+
+פקודת `glimpse` שבה השתמשנו גם שייכת ל-dplyr והיא מספקת "הצצה" לתוך הנתונים.
+באמצעות הפקודה אנחנו רואים את השדות השונים שנמצאים בקובץ שקראנו, מאיזה סוג הם, ומספר ערכים ראשונים בכל שדה.
+
+
+הפקודה הבאה שנלמד היא `select`, פקודה זו מאפשרת לנו לבחור רק משתנים מסוימים, וכך לעבוד עם מבנה נתונים נקי יותר.
+
+```{r select}
+
+work_challenge <- select(kaggle.survey17, starts_with("WorkChallenge"), GenderSelect, Age, EmploymentStatus)
+glimpse(work_challenge)
+
+```
+
+בקוד המוצג לעיל הפעלנו את פונקצית `select` כדי לבחור את כל המשתנים מתוך `kaggle.survey17`, ששמותיהם מתחילים ב-"WorkChallenge", ביחד עם משתני המגדר, גיל, ומצב תעסוקה. על זה הפעלנו את פקודת `glimpse`. אנו רואים שכמות המשתנים קטנה מ-228 ל-26 המשתנים הרלוונטיים.
+
+הפקודה `select` רובוסטית בכך שהיא מאפשרת לנו לבחור על ידי ציון שם המשתנה הספציפי או חלק מההתחלה שלו (starts_with), הסוף שלו (ends_with) או חלק שהוא מכיל (contains).
+
+דרך נוספת להשתמש בפונקציית `select` היא באמצעות אופרטור המקטרת, pipe, שנראה כך `%>%`, המאפשר לנו לשרשר פקודות אחת אחרי השניה, והופך את הקוד שלנו להרבה יותר קריא. לדוגמה, שקול לשורת הקוד הקודמת יראה כך:
+
+```
+kaggle.survey17 %>%
+   select(starts_with("WorkChallenge")) %>%
+   glimpse()
+```
+אופרטור המקטרת דואג להעביר לכל פונקציה בשרשרת את התוצאה של הפונקציה הקודמת. כך מבנה הנתונים עובר לתוך `select` ותוצר הפקודה `select` עובר לתוך `glimpse`. מעתה נשתמש באופרטור זה כאשר מדובר בשרשראות של פקודות מ-dplyr ומ-tidyr.
+
+***
+### תרגיל
+
+   1. קרא את קובץ הנתונים עמו עבדנו בפרק הקודם (googleplaystore.csv), והצץ בנתונים. כמה משתנים יש בקובץ?
+   2. אילו משתנים ישנם בקובץ שהם משתני מחרוזת אבל היו יכולים להיות מספריים?
+   3. בחר את כל המשתנים שמסתיימים במילה "Ver",  ביחד עם כל המשתנים שמכילים את האות הגדולה "R". כמה משתנים קיבלת?
+
+
+
+```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
+library(tidyr)
+library(dplyr)
+google_play <- readr::read_csv(file = "02-data/googleplaystore.csv")
+glimpse(google_play)
+google_play_ver <- google_play %>% 
+  select(ends_with("Ver"), contains("R", ignore.case = FALSE))
+```   
+
+***

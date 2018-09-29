@@ -1,0 +1,203 @@
+---
+title: "מבני הנתונים ב-R"
+output: html_document
+---
+
+```{css, echo=FALSE}
+p {
+  direction: rtl;
+}
+
+h1 {
+  direction: rtl;
+}
+
+h2 {
+  direction: rtl;
+}
+
+h3 {
+  direction: rtl;
+}
+
+h4 {
+  direction: rtl;
+}
+
+ul {
+  direction: rtl;
+}
+
+ol {
+  direction: rtl;
+}
+```
+
+## סוגי מבנה נתונים ב-R
+
+משתנה ב-R יכול לקבל ערכים ממספר סוגים, העיקריים שבהם:
+
+   * מספרי (שלם integer או double)
+   * תו (character)
+   * תאריך (POSIXct)
+
+שימו לב שהשמה נראית כחץ `->` (בעדיפות) או כשיוויון `=`
+
+לדוגמה:
+
+```{r, defining examples}
+
+integer_example <- 10
+integer_example
+numeric_example <- pi # pi is a reserved word...
+numeric_example
+character_examples <- "hello world"
+character_examples
+date_example <- as.Date("2018-10-01")
+date_example
+```
+
+מערכים של ערכים כאלו יהיו שייכים לאחד מהסוגים הבאים:
+
+   * וקטור
+   * מטריצה (מערך דו-מימדי)
+   * data.frame (דומה למטריצה רק מאפשר שילוב של סוגי וקטורים שונים)
+   * רשימה (list) - מבנה נתונים מוכלל
+   * מבנה נוסף נקרא `tibble` אך נדון בו בפרק הבא.
+
+```{r, arrays}
+int_vector <- 1:10
+int_vector
+dbl_vector <- c(1, pi, 3.3, sqrt(2)/2)
+dbl_vector
+chr_vector <- c("hello", "world", 1, pi) # see that the numbers are type cast-ed into characters
+chr_vector
+cbind(1:10, 21:30, 41:50)
+
+# the following is a data frame:
+df_example <- data.frame(city = c("Jerusalem", "Tel-Aviv", "Haifa", "Rishon LeTzion"), 
+                         order_population = c(1, 2, 3, 4))
+df_example
+# another example
+mtcars
+
+# a list can contain any combination of arrays, data frames, and lists
+list(int_vector, dbl_vector, chr_vector, df_example)
+
+```
+
+כדי לפנות לאיבר מסוים בתוך וקטור משתמשים בסוגריים מרובעים [], לדוגמה
+```{r, subsets}
+dbl_vector[1:3]
+```
+
+## פעולות אריתמטיות
+
+פעולות אריתמטיות עובדות על משתנים ומערכים כל עוד גודלם תואם (והסוג שלהם מאפשר פעולות אלו)
+```{r arithmatics}
+c(1, pi, 3.3, sqrt(2)/2)^2
+#c("hello", "world", 1, pi) + 1 # yields an error - you can't add 1 to a character
+```
+
+## לולאות, אופרטורים, והתניות
+
+בדרך כלל, מומלץ להימנע ככל שניתן מלולאות. חלק גדול מהפעולות ב-R פועלות באופן וקטורי או מטריציוני.
+לולאת `for` בנוייה מהתבנית הבאה:
+```
+for (i in vector){
+   # the action that needs to be done...
+}
+```
+
+***
+
+### תרגול
+
+שימוש בלולאות לעומת פעולות וקטוריות.
+
+   1. הגדר וקטור של כל המספרים הזוגיים בין 1-1000. באפשרותך להיעזר בפונקציה `seq`. כדי ללמוד על הפונקציה `seq` הקש ?seq ב-console
+   2. האם יש דרך אחרת להגדיר את הוקטור מבלי להשתמש בפונקציה `seq`?
+   3. חשב וקטור חדש שהוא הוקטור שקיבלת בריבוע
+      a. באמצעות לולאת `for`
+      b. באמצעות פעולה וקטורית
+   4. השתמש בפונקציה `Sys.time` כדי למדוד את משך הזמן שנדרש לשתי הפעולות
+   
+```{r loop example, include=FALSE}
+even <- seq(from = 2, to = 10000000, by = 2)  # or use 1:500*2
+
+# first method
+start <- Sys.time()
+even_squared <- even^2
+Sys.time() - start
+
+# second method
+start <- Sys.time()
+for (i in 1:length(even)) {
+  even_squared[i] <- even_squared[i]^2
+}
+Sys.time() - start
+```
+
+***
+
+אופרטורים לוגיים ב-R:
+
+   * או `|`
+   * וגם `&`
+   * not `!`
+   * `xor(a,b)`
+   * בדיקת שיוויון `==`
+   * שונה `!=`
+
+```{r, operators example}
+5 == 6
+6 == 6
+5 == 6 | 6 == 6
+TRUE & FALSE
+xor(TRUE, FALSE)
+FALSE == !TRUE
+FALSE != TRUE
+```
+
+התניות
+
+```
+if (condition){
+   expression
+} else if (condition){
+   expression
+} else {
+   expression
+}
+```
+
+## חבילות
+
+מעבר לפקודות הבסיסיות שנקראות "Base R", ישנן חבילות רבות שמעשירות את R. מה שהופך את R לשפה מאוד אטרקטיבית משום שלהרבה מהצרכים שבהם אתם עשויים להיתקל, כבר פותחו פתרונות.
+
+### איך עובדים עם חבילות?
+
+כדי להתקין חבילה, כל מה שצריך לעשות הוא להפעיל את הפקודה
+
+```
+install.packages(pkgs)
+```
+
+פקודה זו תתחבר ל-CRAN (מאגר החבילות של R), תוריד את החבילה ותתקין אותה על המחשב.
+
+***
+## תרגיל
+
+   1. התקן/י את חבילת `tidyverse` על המחשב שלך.
+
+***
+
+החבילה שהתקנת היא "חבילה של חבילות", היא מכילה חבילות שימושיות כגון `ggplot2` לתרשימים `tibble` לבניית מבני נתונים מסוג tibble, `dplyr` ו-`tidyr` למניפולציות של נתונים, `magrittr` ליצירת אופרטור חדש שנדון בו בהמשך, ועוד חבילות רבות.
+
+כדי להשתמש בפונקציות הנמצאות בחבילה ניתן להשתמש בפקודה `library` - מה שיקרא את כל הפקודות של החבילה לזיכרון. לחילופין, ניתן גם להשתמש רק בפקודה מסוימת מבלי לקרוא את כל החבילה לזיכרון. אופציה זו שימושית כאשר צפוי שימוש מוגבל בלבד בפקודה מסוימת. כדי לקרוא לפקודה בחבילה מבלי לטעון את כל החבילה יש להשתמש ב `::`. לדוגמה, בעת קריאת קובץ עלינו להשתמש בפקודה לקריאת קובץ פעם אחת בתחילת העבודה ולכן נוכל להסתפק בצורה זו.
+
+```
+readxl::read_excel(...)
+```
+
+(מתוך חבילת `readxl` השתמש בפונקצית `read_excel`).
