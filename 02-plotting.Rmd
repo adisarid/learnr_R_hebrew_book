@@ -4,33 +4,10 @@ output: html_document
 ---
 
 ```{css, echo=FALSE}
-p {
+p, h1, h2, h3, h4, ul, ol {
   direction: rtl;
 }
 
-h1 {
-  direction: rtl;
-}
-
-h2 {
-  direction: rtl;
-}
-
-h3 {
-  direction: rtl;
-}
-
-h4 {
-  direction: rtl;
-}
-
-ul {
-  direction: rtl;
-}
-
-ol {
-  direction: rtl;
-}
 ```
 
 # בשביל מה?
@@ -72,20 +49,20 @@ ol {
 
 ```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
 library(tidyverse)
-kaggle.scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+kaggle_scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
 # Now to load the actual data:
-kaggle.survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
-time.spent <- kaggle.survey17 %>%
-  select(one_of(kaggle.scheme$Column[221:226]))
-time.spent.gathered <- time.spent %>%
+kaggle_survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+time_spent <- kaggle_survey17 %>%
+  select(one_of(kaggle_scheme$Column[221:226]))
+time_spent_gathered <- time_spent %>%
   gather(activity, percent) %>%
   filter(percent >=0 & percent <= 100)
 
-kaggle_workday_survey <- time.spent.gathered %>% 
+kaggle_workday_survey <- time_spent_gathered %>% 
   filter(percent <= 100) %>%
   group_by(activity) %>% 
-  summarize(mean.percent = mean(percent, na.rm = TRUE)) %>%
-  mutate(activity = factor(activity, levels = kaggle.scheme$Column[221:226]))
+  summarize(mean_percent = mean(percent, na.rm = TRUE)) %>%
+  mutate(activity = factor(activity, levels = kaggle_scheme$Column[221:226]))
 ```
 
 השכבה הראשונה בגרף היא שכבת הנתונים. היא לא "מציירת" כלום על המסך מעבר לקנווס ריק, אבל היא מהווה את הבסיס ליתר השכבות.
@@ -107,7 +84,7 @@ ggplot(kaggle_workday_survey) +
   geom_col(fill = "lightblue", 
            color = "black", 
            aes(x = activity,
-               y = mean.percent)) 
+               y = mean_percent)) 
 ```
 
 כעת נוסיף לגרף שכבה נוספת של תוויות שימוקמו בראש העמודות, כדי להקל על הקריאה של הגרף
@@ -117,10 +94,10 @@ ggplot(kaggle_workday_survey) +
   geom_col(fill = "lightblue", 
            color = "black", 
            aes(x = activity,
-               y = mean.percent)) + 
+               y = mean_percent)) + 
   geom_label(aes(x = activity,
-                 y = mean.percent,
-                 label = paste0(round(mean.percent, 0), "%")))
+                 y = mean_percent,
+                 label = paste0(round(mean_percent, 0), "%")))
   
 ```
 
@@ -131,8 +108,8 @@ ggplot(kaggle_workday_survey) +
 ```{r detailed-ggplot2-explained4}
 ggplot(kaggle_workday_survey,
        aes(x = activity,
-           y = mean.percent,
-           label = paste0(round(mean.percent, 0), "%"))) + 
+           y = mean_percent,
+           label = paste0(round(mean_percent, 0), "%"))) + 
   geom_col(fill = "lightblue", 
            color = "black") + geom_label() + 
   ylab("Average percent [%]") + 
@@ -161,6 +138,9 @@ ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +
 בקובץ googleplaystore.csv ישנן כ-11,000 רשומות של אפליקציות מתוך חנות האפליקציות של google.
 הקובץ נוצר באמצעות scraping, טכניקה שבאמצעותה סורקים אתרים ומחלצים מתוכם נתונים לתוך מבנה מסודר וטבלאי, כפי שנמצא בקובץ.
 
+להורדת הקובץ ניתן להיכנס לקישור הבא:
+[https://github.com/adisarid/learnr_R_hebrew_book/blob/master/02-data/googleplaystore.csv](https://github.com/adisarid/learnr_R_hebrew_book/blob/master/02-data/googleplaystore.csv)
+
 אנו נשתמש בקובץ זה כדי לתרגל צורות שונות של ויז'ואליזציה. 
 עליך להשלים את הפרמטרים המתאימים במקומות שבהם ישנו XXX.
 
@@ -175,7 +155,8 @@ glimpse(XXX)
 
 ```
 ```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
-google_play <- read_csv(file = "02-data/googleplaystore.csv")
+google_play <- read_csv(file = "02-data/googleplaystore.csv") %>%
+  filter(!(Type %in% c(NaN, 0)))
 glimpse(google_play)
 ```
 
@@ -241,12 +222,13 @@ rating_reviews_chart <- ggplot(google_play, aes(x = log(Reviews), y = Rating)) +
 
 ```
 google_play_groups <- google_play %>%
-  mutate(reviews_groups = cut(Reviews, breaks = c(10^(0:6), max(Reviews) + 1)))
+  mutate(reviews_groups = cut(XXX, breaks = c(10^(0:6), max(Reviews) + 1)))
 
 rating_reviews_grouped_chart <- 
-  ggplot(google_play_groups, aes(x = log(Reviews), y = Rating, color = reviews_groups)) + 
+  ggplot(google_play_groups, aes(x = XXX, y = XXX, color = XXX)) + 
   geom_point() + 
-  stat_smooth(method = "lm")
+  stat_smooth(method = "lm") +
+  scale_x_log10()
 ```
 
 ```{r rating-reviews-groups, include=FALSE}
@@ -254,9 +236,12 @@ google_play_groups <- google_play %>%
   mutate(reviews_groups = cut(Reviews, breaks = c(10^(0:6), max(Reviews) + 1)))
 
 rating_reviews_grouped_chart <- 
-  ggplot(google_play_groups, aes(x = log(Reviews), y = Rating, color = reviews_groups)) + 
+  ggplot(google_play_groups, aes(x = Reviews, y = Rating, color = reviews_groups)) + 
   geom_point() + 
-  stat_smooth(method = "lm")
+  stat_smooth(method = "lm") + 
+  scale_x_log10()
+
+rating_reviews_grouped_chart
 ```
 
    6. הצג תרשים boxplot המשוואה את התפלגות מספר הביקורות בין אפליקציות חינמיות לאפליקציות בתשלום.
@@ -266,7 +251,7 @@ rating_reviews_grouped_chart <-
       
 ```
 # now you're on your own... use `geom_boxplot()` and the cheatsheet.
-# use log() for the log transformation in question 6b.
+# use log() for the log transformation in question 6b, or add scale_y_log10() to the ggplot sequence
 ```
 
 ```{r, rating-reviews-price, include=FALSE}
@@ -275,8 +260,9 @@ rating_reviews_grouped_chart <-
 rating_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = Rating)) + 
   geom_boxplot()
 
-review_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = log(Reviews))) + 
-  geom_boxplot()
+review_price_chart <- ggplot(google_play[-9149,], aes(x = Type, y = Reviews)) + 
+  geom_boxplot() + 
+  scale_y_log10()
 ```
 
    7. דרך חלופית להסתכל על התפלגויות היא באמצעות גרף עמודות הנקרא היסטוגרמה. בסעיף זה נבחן את התפלגות גודל האפליקציה.
