@@ -4,31 +4,7 @@ output: html_document
 ---
 
 ```{css, echo=FALSE}
-p {
-  direction: rtl;
-}
-
-h1 {
-  direction: rtl;
-}
-
-h2 {
-  direction: rtl;
-}
-
-h3 {
-  direction: rtl;
-}
-
-h4 {
-  direction: rtl;
-}
-
-ul {
-  direction: rtl;
-}
-
-ol {
+p, h1, h2, h3, h4, ul, ol {
   direction: rtl;
 }
 ```
