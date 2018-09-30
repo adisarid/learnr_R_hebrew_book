@@ -4,33 +4,18 @@ output: html_document
 ---
 
 ```{css, echo=FALSE}
-p {
+p, h1, h2, h3, h4, ul, ol {
   direction: rtl;
 }
 
-h1 {
+img {
   direction: rtl;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-h2 {
-  direction: rtl;
-}
 
-h3 {
-  direction: rtl;
-}
-
-h4 {
-  direction: rtl;
-}
-
-ul {
-  direction: rtl;
-}
-
-ol {
-  direction: rtl;
-}
 ```
 
 מדעי הנתונים (או Data Science) כפי שנקרא המונח בשפה המקצועית, מערב תחומי מדע שונים, לדוגמה: מתמטיקה, סטטיסטיקה, מדעי המחשב, הנדסת תעשיה, ועוד.
@@ -41,7 +26,7 @@ ol {
 
 מדעי הנתונים היא קבוצה רחבה של כלים ושיטות שנועדו לתמוך אותנו בניתוח הנתונים, הפיכתם לתובנות, והטמעה של הכלים בסביבות עבודה (Production), המאפשרים קבלת החלטות בזמן אמת וללא התערבות אדם (Automation).
 
-לצורך כך, נדרשים כלים ובעלי מקצוע שיכולים להפעיל את הכלים. הקורס הזה הוא קורס מעשי ולא תיאורתי, כלומר הוא דן בכלים עצמם ומניח שהידע התיאורתי קיים, ברמה מסוימת. הוא אינו קורס בסטטיסטיקה או במדעי הנתונים, והוא אינו שם דגש על התיאוריה הסטטיסטית או האלגוריתמית שמאחורי הפקודות אלא בעיקר על הטכניקה - איך לממש את התיאוריה באמצעות R.
+לצורך כך, נדרשים כלים ובעלי מקצוע שיכולים להפעיל את הכלים. הקורס הזה הוא קורס מעשי ולא תיאורתי, כלומר הוא דן בכלים עצמם ומניח שהידע התיאורתי קיים, ברמה מסוימת. הוא אינו קורס בסטטיסטיקה, והוא אינו שם דגש על התיאוריה הסטטיסטית או האלגוריתמית שמאחורי הפקודות אלא בעיקר על הטכניקה - איך לממש את התיאוריה באמצעות R.
 
 לכן, הקורס יתאים במיוחד לאלו שיש להם רקע כלשהו בתחום רלוונטי, לדוגמה:
 
@@ -49,6 +34,8 @@ ol {
    * מתמטיקה
    * סטטיסטיקה
    * הנדסת תעשייה
+   * מומחי BI
+   * אנליסטים
    * מי ששולט בשפה מסוימת למדעי הנתונים (לדוגמה Python), ומעוניין להכיר טוב יותר גם את R.
    * הקורס יכול להתאים גם למי שמעוניין בחשיפה ראשונית לתחום מדעי הנתונים - מנקודת מבט טכנית-תכנותית.
 
@@ -58,7 +45,7 @@ ol {
 
 ספר מצויין נוסף (ובהרבה מובנים תוכנו מתלכד עם תוכן הקורס) הוא הספר הבא:
 
-   * R for Data Science, by G. Grolemund, and H. Wickham, O'reilly (2017). Available online: (http://r4ds.had.co.nz/)[http://r4ds.had.co.nz/], (feched 26/07/2018).
+   * R for Data Science, by G. Grolemund, and H. Wickham, O'reilly (2017). Available online: [http://r4ds.had.co.nz/](http://r4ds.had.co.nz/), (feched 26/07/2018).
 
 הקורס נוגע בנושאים מגוונים: 
 
@@ -75,7 +62,7 @@ ol {
    
    
 אגב, הקורס עצמו כתוב ב-R כולו (חבילת RMarkdown).
-להתחלת הקורס מומולץ להתקין את הגרסאות האחרונות של [R](https://cran.r-project.org/) ו-[RStudio](https://www.rstudio.com/).
+
 
 
 ```{r setup, include=FALSE}
@@ -95,8 +82,10 @@ knitr::opts_chunk$set(echo = TRUE)
       * ויז'ואליזציה של הנתונים (בתרשימים)
       * מידול של הנתונים
    * הפקת תובנות והעברתם הלאה
-   
-אבל כמה זמן לוקחת כל משימה?
+
+![תהליך העבודה בפרויקטים של מדעי הנתונים](process_data_science_1.png)
+
+### כמה זמן לוקחת כל משימה?
 
 הנתונים הבאים לקוחים מתוך סקר של אתר [kaggle](https://www.kaggle.com), אתר שבו מתפרסמות תחרויות בתחום מדעי הנתונים.
 
@@ -115,10 +104,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 
 # This is just the data scheme ("codebook")
-kaggle.scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+kaggle_scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
 
 # We are going to need the following fields:
-kaggle.scheme[221:226, 1:2] %>%
+kaggle_scheme[c(221:226, 87), 1:2] %>%
   knitr::kable(format = "pandoc")
 ```
 
@@ -126,36 +115,37 @@ kaggle.scheme[221:226, 1:2] %>%
 
 ```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10}
 # Now to load the actual data:
-kaggle.survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
-time.spent <- kaggle.survey17 %>%
-  select(one_of(kaggle.scheme$Column[221:226]))
-time.spent.gathered <- time.spent %>%
-  gather(activity, percent) %>%
+kaggle_survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+time_spent <- kaggle_survey17 %>%
+  select(one_of(kaggle_scheme$Column[221:226]), Tenure)
+time_spent_gathered <- time_spent %>%
+  gather(activity, percent, -Tenure) %>%
   filter(percent >=0 & percent <= 100)
 
 # Here's what the data looks like originally
-time.spent
+time_spent
 ```
 
 יש גם לא מעט תצפיות:
 
 ```{r, warning=FALSE, message=FALSE, fig.width=10}
 # We actually have just 7500 observations because there are a lot of NAs
-sum(!is.na(time.spent$TimeGatheringData))
+sum(!is.na(time_spent$TimeGatheringData))
 
 # Here's what the data looks like after some munging
-time.spent.gathered
+time_spent_gathered
 
 # So now, lets plot the distribution, per item:
-ggplot(time.spent.gathered, aes(x = 
+ggplot(time_spent_gathered, aes(x = 
                                   factor(activity, # set the x
-                                           levels = kaggle.scheme$Column[221:226]), # levels to set order
+                                           levels = kaggle_scheme$Column[221:226]), # levels to set order
                                 y = percent)) + # set the y
   geom_boxplot(fill = "lightblue") + # tell ggplot we want a "boxplot" figure, and with lightblue color
   ylab("Percent [%]") +  # the caption for y-axis
   xlab("Activity type") +  # the caption for x-axis
   coord_cartesian(y = c(0, 100)) + # trim the y axis to avoid some errors (the data set has errors)
   theme(axis.text.x = element_text(angle = 15, size = 14)) # adjust the angle for x-ticks
+
 ```
 
 התרשים הראשון נקרא boxplot, והוא דרך טובה לראות בבת אחת את התפלגות הנתונים. הקו באמצע כל מלבן מציג את החציון, נקודות מציגות ערכי קיצון, והמלבן עצמו תוחם את שני שליש ההתפלגות (רבעון ראשון עד שלישי).
@@ -176,14 +166,14 @@ ggplot(time.spent.gathered, aes(x =
 את אותם הנתונים אפשר לסדר בדרך קצת שונה, בתרשים ששמו barplot
 
 ```{r barplot of time spent proportions on activities}
-ggplot(time.spent.gathered %>% 
+ggplot(time_spent_gathered %>% 
          filter(percent <= 100) %>%
          group_by(activity) %>% 
-         summarize(mean.percent = mean(percent, na.rm = TRUE)), 
+         summarize(mean_percent = mean(percent, na.rm = TRUE)), 
        aes(x = factor(activity,
-                      levels = kaggle.scheme$Column[221:226]), 
-           y = mean.percent,
-           label = paste0(round(mean.percent, 0), "%"))) + 
+                      levels = kaggle_scheme$Column[221:226]), 
+           y = mean_percent,
+           label = paste0(round(mean_percent, 0), "%"))) + 
   geom_col(fill = "lightblue", color = "black") + 
   ylab("Average percent [%]") + 
   xlab("Activity type") + 
@@ -192,9 +182,42 @@ ggplot(time.spent.gathered %>%
 ```
 
 
-התרשים השני נקרא barplot והוא מציג את הנתח היחסי של כל פעילות, בממוצע. מן הסתם סכום האחוזים אינו מגיע ל-100% משום שמדובר בממוצע על פני אחוזים.
+ה-barplot מציג את הנתח היחסי של כל פעילות, בממוצע. מן הסתם סכום האחוזים אינו מגיע ל-100% משום שמדובר בממוצע על פני אחוזים.
 
 התרשימים מלמדים אותנו שחלק מאוד גדול מעבודתו של מדען הנתונים היא סביב איסוף הנתונים וסידור שלהם (בממוצע 36%), לאחר מכן בניית מודלים (21%), הצגת נתונים וחילוץ תובנות (13%, 14%), ולבסוף, שילוב אלגוריתמים בסביבות תוכנה (11%).
+
+מעניין גם לענות על השאלה, האם יש קשר בין וותק במקצוע לבין הפעילויות המבוצעות.
+
+```{r tenure tasks, warning=FALSE, message=FALSE, fig.width=10}
+
+# average percent as a function of tenure
+time_spent_tenure <- time_spent_gathered %>%
+  group_by(Tenure, activity) %>%
+  filter(percent >=0 & percent <= 100) %>%
+  summarize(mean_prc = mean(percent)) %>%
+  filter(!is.na(Tenure))
+
+ggplot(time_spent_tenure, aes(x = 
+                                factor(activity, # set the x
+                                           levels = kaggle_scheme$Column[221:226]),
+                              y = mean_prc)) + 
+  geom_bar(aes(fill = factor(Tenure, levels = c("I don't write code to analyze data",
+                                                "Less than a year",
+                                                "1 to 2 years",
+                                                "3 to 5 years",
+                                                "6 to 10 years",
+                                                "More than 10 years"))),
+           stat = "identity", position = "dodge", color = "black") + 
+  ylab("Percent [%]") + 
+  xlab("Activity type") +
+  coord_cartesian(y = c(0, 100)) + 
+  scale_fill_brewer(type = "seq", palette = 2) + 
+  theme(axis.text.x = element_text(angle = 15, size = 14)) + # adjust the angle for x-ticks
+  guides(fill = guide_legend("Tenure"))
+
+```
+
+השתמשנו במשחק הזה עם נתונים, כדי להראות כמה מידע אפשר לחלץ מסקר קצר עם 7 משתנים בסה"כ. כעת נציג כמה דוגמאות נוספות לשימוש במודלים של מדע הנתונים."
 
 ## מוטיבציה - דוגמאות ושימושים
 
@@ -202,14 +225,14 @@ ggplot(time.spent.gathered %>%
 
 דוגמה של Amazon, ebay, netflix
 מערכות המלצה משמשות כדי לשפר מצד אחד את השירות שניתן ללקוחות ומצד שני, לגרום להם לבצע יותר רכישות על ידי הצגת מוצרים רלוונטיים.
-![Amazon recommendations](AmazonAlsoBought.jpg)
-![ebay recommendations](EbayFrequentlyBought.jpg)
+![דוגמה למערכת המלצות באתר אמאזון](AmazonAlsoBought.jpg)
+![דוגמה למערכת ההמלצות באתר ebay](EbayFrequentlyBought.jpg)
 
 ### סדרות עיתיות וחיזוי (time series forecasting)
 
 דוגמה של מלאים
 כדי לתכנן מלאי לוגיסטי, צריך קודם כל להעריך את היקף הביקוש (הצריכה). על ידי התאמת מודלים סטטיסטיים של חיזוי ניתן להעריך את היקף הביקוש לחודשים או שנים קדימה, תוך זיהוי מגמות, עונתיות, ותופעות ברות חיזוי אחרות.
-![four examples of time series with different patterns](time-series-examples-fourexamples-1.png)
+![ארבע דוגמאות לסדרות עיתיות, עם דפוסים שונים](time-series-examples-fourexamples-1.png)
 
 הדוגמאות מכילות תבניות שונות. מחירי הדירות (שמאל למעלה) מראים מחזוריות של מספר ימים ועונתיות שנתית. חוזים עתידיים של ממשלת ארהב מראים טרנד יורד, וייצור חשמל באוסטרליה (ימין למטה) מצביע על טרנד עולה ועל עונתיות שנתית.
 מחירי המניות אינם מציגים תבנית מסוימת אלא נראים כאקראיים לגמרי (ימין למטה).
@@ -219,7 +242,9 @@ ggplot(time.spent.gathered %>%
    * Rob J. Hyndman and George Athansasopoulos, Forecasting: Principles and Practice 2nd edition, _OTexts_, 2018. Available Online (feched Sep 2018): [https://otexts.org/fpp2/](https://otexts.org/fpp2/)
 
 ### הסתברות לרכישה וחיזוי נטישה (estimating conversion probability and churn)
-לקחת דוגמה של Telco מתוך הקישור [חיזוי נטישה Telco](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
+
+קובץ דוגמה שנעבוד איתו במהלך הקורס, של נתוני שירות הלקוחות של חברת Telco.
+הקובץ ועוד רבים זמין באתר של IBM [בקישור](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
 
 ### רפואה (Healthcare)
 
@@ -240,7 +265,7 @@ ggplot(time.spent.gathered %>%
 
 ## התקנות
 
-לפני שנעבור לחלק הבא, ודאו שעל המחשב מותקן RStudio IDE, ו-R.
+להתחלת הקורס מומולץ להתקין את הגרסאות האחרונות של [R](https://cran.r-project.org/) ו-[RStudio](https://www.rstudio.com/).
 
 לאחר ההתקנה, התקינו את חבילות ה-`tidyverse`. חבילות אלו הינן תוספות המביאות יכולות רבות ל-R, ועל חלקן נלמד בהמשך. בינתיים כדי להתקין אותן פשוט הקישו ב-RStudio:
 
