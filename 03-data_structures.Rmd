@@ -16,6 +16,7 @@ p, h1, h2, h3, h4, ul, ol {
    * מספרי (שלם integer או double)
    * תו (character)
    * תאריך (POSIXct)
+   * קטגוריות (factors)
 
 שימו לב שהשמה נראית כחץ `->` (בעדיפות) או כשיוויון `=`
 
@@ -31,6 +32,9 @@ character_examples <- "hello world"
 character_examples
 date_example <- as.Date("2018-10-01")
 date_example
+factor_example <- as_factor(c("big", "big", "small", "medium", "small", "big", "bigger"))
+factor_example
+summary(factor_example)
 ```
 
 מערכים של ערכים כאלו יהיו שייכים לאחד מהסוגים הבאים:
