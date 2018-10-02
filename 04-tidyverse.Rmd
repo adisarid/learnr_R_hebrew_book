@@ -1,5 +1,6 @@
 ---
-title: "קריאת נתונים, טרנספורמציות, ותכנות פונקציונלי באמצעות tidyverse"
+title: "Data Science עם R - פרק 4 - קריאת נתונים, טרנספורמציות, ותכנות פונקציונלי באמצעות tidyverse"
+author: "עדי שריד"
 output: html_document
 ---
 

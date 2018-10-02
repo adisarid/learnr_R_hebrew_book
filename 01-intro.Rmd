@@ -1,5 +1,6 @@
 ---
-title: "מבוא"
+title: "Data Science עם R - פרק מבוא"
+author: "עדי שריד"
 output: html_document
 ---
 

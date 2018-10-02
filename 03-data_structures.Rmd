@@ -1,5 +1,6 @@
 ---
-title: "מבני הנתונים ב-R"
+title: "Data Science עם R - פרק 3 - מבני הנתונים ב-R"
+author: "עדי שריד"
 output: html_document
 ---
 

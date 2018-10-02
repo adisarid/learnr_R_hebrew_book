@@ -1,5 +1,6 @@
 ---
-title: "ויז'ואליזציה של נתונים"
+title: "Data Science עם R - פרק 2 - ויז'ואליזציה של נתונים"
+author: "עדי שריד"
 output: html_document
 ---
 
