@@ -156,8 +156,7 @@ glimpse(XXX)
 
 ```
 ```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
-google_play <- read_csv(file = "02-data/googleplaystore.csv") %>%
-  filter(!(Type %in% c(NaN, 0)))
+google_play <- read_csv(file = "02-data/googleplaystore.csv")
 glimpse(google_play)
 ```
 
@@ -327,7 +326,30 @@ rating_reviews_cont_rate <-
 ```
 
 
-בשיעור זה למדנו והתנסנו בסוגים שונים של גרפים, ובדרכים לבנות אותם, אבל למעשה רק נגענו ב"קצה הקרחון" של היכולות של `ggplot2`. במהלך הקורס תראו עוד הרבה גרפים שילוו את ההסברים בפרקים השונים, ותוכלו להתנסות עוד בבניית גרפים.
+בפרק זה למדנו והתנסנו בסוגים שונים של גרפים, ובדרכים לבנות אותם, אבל למעשה רק נגענו ב"קצה הקרחון" של היכולות של `ggplot2`. במהלך הקורס תראו עוד הרבה גרפים שילוו את ההסברים בפרקים השונים, ותוכלו להתנסות עוד בבניית גרפים.
+
+### איך לבנות את הגרף "הנכון"?
+
+כדי לבחור את הגרף שעליכם לבנות לבעיה או שאלת מחקר מסוימת, ענו על השאלות הבאות:
+
+   1. כמה משתנים מעורבים בשאלת המחקר (משתנה אחד? שני משתנים? שלושה? יותר?)
+   2. מהם המאפיינים של כל אחד מהמשתנים:
+      a. האם המשתנים הם בעלי ערכים רציפים?
+      b. ערכים בדידים (לדוגמה קטגוריות)
+      c. ערכים אורדינליים (בדידים עם סדר יחס)
+   3. בחירה באופן המיפוי של משתני קטגוריות
+      a. האם לפי ציר x או
+      b. לפי גיאומטריות אחרות כגון: צבע, וצורה
+      c. לפי פאות (facets)
+   4. בחירה באופן המיפוי של משתנים רציפים
+      a. האם לפי ציר x
+      b. ציר y
+      c. לפי גודל או צבע האובייקט
+   5. סידור הצירים והמקרא
+      a. האם הצירים ברורים, האם הם מכילים את כל הנתונים אבל לא "מעלימים" מידע חשוב?
+      b. האם הכותרות ברורות?
+   
+      
 
 בכל מקרה שבו אתם מתלבטים איך נכון לבנות גרף מסוים, או לתאר את הקשר שבין משתנים, או רק מחפשים "שליף", נוח מאוד להשתמש ב-Cheetsheets הנמצאים בתפריט ב-Rstudio תחת:
 
@@ -335,8 +357,55 @@ rating_reviews_cont_rate <-
 Help -> Cheetsheets -> Data Visualization with ggplot2
 ```
 
-## השיעור הבא
+### קובץ תרגול Telco - נטישה ולקוחות
 
-בשיעור הבא "נחזור ליסודות" עם עקרונות הקידוד ב-R,  סוגי משתנים, פונקציות, לולאות, אופרטורים, ועוד.
+קראו את הקובץ של נטישת לקוחות Telco, הקובץ הורד מהאתר של IBM בכתובת:
+[https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
+
+אגב ניתן לקרוא את הקובץ ישירות על ידי שימוש בפקודה:
+
+```{r read telco}
+
+telco_churn <- read_csv("https://community.watsonanalytics.com/wp-content/uploads/2015/03/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+
+glimpse(telco_churn)
+
+```
+
+   1. כעת, השתמש בתרשים כדי להציג את הפיזור של כלל ההוצאות (TotalCharges) למול וותק הלקוח (tenure).
+      a. איזה צורה יוצר התרשים? מדוע?
+      b. השתמש בפאות (facets) כדי לפצל את התרשים לפי סוג החוזה (משתנה Contract), והוסף החלקה (`stat_smooth`). מה אתה למד מהתוצאה?
+   2. בחן את ההתפלגות של ההוצאות החודשיות (MonthlyCharges) למול נטישה (Churn)
+      a. האם יש קשר בין נטישה לבין התשלום החודשי? האם משתמשים נוטשים שילמו יותר או פחות?
+      b. כעת, בנה תרשים נוסף הבוחן את ההוצאות החודשיות למול נטישה, אך גם מפריד בין סוגי החיבור לאינטרנט (InternetService). האם הקביעה שלך בסעיף הקודם משתנה באיזשהו אופן? מדוע זה כך?
+      c. בנו תרשים המציג את כמות הלקוחות שנטשו ולא נטשו, למול סוג השירות שקיבלו. האם תרשים זה עוזר להסביר את התופעה שבסעיף הקודם?
+
+
+```{r tenure vs monthly charges, include=FALSE}
+
+ggplot(telco_churn, aes(x=tenure, y=TotalCharges)) + geom_point() + stat_smooth()
+ggplot(telco_churn, aes(x=tenure, y=TotalCharges)) + geom_point() + facet_wrap(~ Contract) + stat_smooth()
+ggplot(telco_churn, aes(x=Churn,y=MonthlyCharges)) + geom_boxplot()
+ggplot(telco_churn, aes(x=Churn,y=MonthlyCharges)) + geom_boxplot() + facet_wrap(~InternetService)
+ggplot(telco_churn, aes(x = InternetService, fill=Churn)) + geom_bar(position = "stack")
+
+# The churn is much higher in fiber optics, and the monthly payments of fiber optics are higher.
+# Hence, when we compare the monthly charges vs. churn it looks like you churn when you pay more,
+# but in fact, when we examine the interaction of the internet service type,
+# we see that actually churning customers paid less. The bias was created since we mixed the service types.
+
+telco_churn %>%
+  group_by(InternetService, Churn) %>%
+  summarize(pymnt = mean(MonthlyCharges))
+
+```
+
+
+
+
+
+## הפרק הבא
+
+בפרק הבא "נחזור ליסודות" עם עקרונות הקידוד ב-R,  סוגי משתנים, פונקציות, לולאות, אופרטורים, ועוד.
 
 ***

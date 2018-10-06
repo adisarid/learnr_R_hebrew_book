@@ -309,14 +309,96 @@ ggplot(XXX, aes(XXX)) +
 <li>השוו בין קטגורית EDUCATION לקטגוריית TOOLS. הביטו בצורה בה מתפזרות הנקודות בכל אחד מהגרפים. על מה מעיד הבדל זה?</li>
 </ol></li>
 </ol>
-<p>בשיעור זה למדנו והתנסנו בסוגים שונים של גרפים, ובדרכים לבנות אותם, אבל למעשה רק נגענו ב“קצה הקרחון” של היכולות של <code>ggplot2</code>. במהלך הקורס תראו עוד הרבה גרפים שילוו את ההסברים בפרקים השונים, ותוכלו להתנסות עוד בבניית גרפים.</p>
+<p>בפרק זה למדנו והתנסנו בסוגים שונים של גרפים, ובדרכים לבנות אותם, אבל למעשה רק נגענו ב“קצה הקרחון” של היכולות של <code>ggplot2</code>. במהלך הקורס תראו עוד הרבה גרפים שילוו את ההסברים בפרקים השונים, ותוכלו להתנסות עוד בבניית גרפים.</p>
+</div>
+<div id="----" class="section level3">
+<h3>איך לבנות את הגרף “הנכון”?</h3>
+<p>כדי לבחור את הגרף שעליכם לבנות לבעיה או שאלת מחקר מסוימת, ענו על השאלות הבאות:</p>
+<ol style="list-style-type: decimal">
+<li>כמה משתנים מעורבים בשאלת המחקר (משתנה אחד? שני משתנים? שלושה? יותר?)</li>
+<li>מהם המאפיינים של כל אחד מהמשתנים:
+<ol style="list-style-type: lower-alpha">
+<li>האם המשתנים הם בעלי ערכים רציפים?</li>
+<li>ערכים בדידים (לדוגמה קטגוריות)</li>
+<li>ערכים אורדינליים (בדידים עם סדר יחס)</li>
+</ol></li>
+<li>בחירה באופן המיפוי של משתני קטגוריות
+<ol style="list-style-type: lower-alpha">
+<li>האם לפי ציר x או</li>
+<li>לפי גיאומטריות אחרות כגון: צבע, וצורה</li>
+<li>לפי פאות (facets)</li>
+</ol></li>
+<li>בחירה באופן המיפוי של משתנים רציפים
+<ol style="list-style-type: lower-alpha">
+<li>האם לפי ציר x</li>
+<li>ציר y</li>
+<li>לפי גודל או צבע האובייקט</li>
+</ol></li>
+<li>סידור הצירים והמקרא
+<ol style="list-style-type: lower-alpha">
+<li>האם הצירים ברורים, האם הם מכילים את כל הנתונים אבל לא “מעלימים” מידע חשוב?</li>
+<li>האם הכותרות ברורות?</li>
+</ol></li>
+</ol>
 <p>בכל מקרה שבו אתם מתלבטים איך נכון לבנות גרף מסוים, או לתאר את הקשר שבין משתנים, או רק מחפשים “שליף”, נוח מאוד להשתמש ב-Cheetsheets הנמצאים בתפריט ב-Rstudio תחת:</p>
 <pre><code>Help -&gt; Cheetsheets -&gt; Data Visualization with ggplot2</code></pre>
 </div>
+<div id="--telco----" class="section level3">
+<h3>קובץ תרגול Telco - נטישה ולקוחות</h3>
+<p>קראו את הקובץ של נטישת לקוחות Telco, הקובץ הורד מהאתר של IBM בכתובת: <a href="https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/" class="uri">https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/</a></p>
+<p>אגב ניתן לקרוא את הקובץ ישירות על ידי שימוש בפקודה:</p>
+<pre class="r"><code>telco_churn &lt;- read_csv(&quot;https://community.watsonanalytics.com/wp-content/uploads/2015/03/WA_Fn-UseC_-Telco-Customer-Churn.csv&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   SeniorCitizen = col_integer(),
+##   tenure = col_integer(),
+##   MonthlyCharges = col_double(),
+##   TotalCharges = col_double()
+## )</code></pre>
+<pre><code>## See spec(...) for full column specifications.</code></pre>
+<pre class="r"><code>glimpse(telco_churn)</code></pre>
+<pre><code>## Observations: 7,043
+## Variables: 21
+## $ customerID       &lt;chr&gt; &quot;7590-VHVEG&quot;, &quot;5575-GNVDE&quot;, &quot;3668-QPYBK&quot;, &quot;77...
+## $ gender           &lt;chr&gt; &quot;Female&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Female&quot;, &quot;...
+## $ SeniorCitizen    &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ Partner          &lt;chr&gt; &quot;Yes&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;N...
+## $ Dependents       &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;N...
+## $ tenure           &lt;int&gt; 1, 34, 2, 45, 2, 8, 22, 10, 28, 62, 13, 16, 5...
+## $ PhoneService     &lt;chr&gt; &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;...
+## $ MultipleLines    &lt;chr&gt; &quot;No phone service&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No phone ser...
+## $ InternetService  &lt;chr&gt; &quot;DSL&quot;, &quot;DSL&quot;, &quot;DSL&quot;, &quot;DSL&quot;, &quot;Fiber optic&quot;, &quot;F...
+## $ OnlineSecurity   &lt;chr&gt; &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, ...
+## $ OnlineBackup     &lt;chr&gt; &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, ...
+## $ DeviceProtection &lt;chr&gt; &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, ...
+## $ TechSupport      &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;N...
+## $ StreamingTV      &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;...
+## $ StreamingMovies  &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;N...
+## $ Contract         &lt;chr&gt; &quot;Month-to-month&quot;, &quot;One year&quot;, &quot;Month-to-month...
+## $ PaperlessBilling &lt;chr&gt; &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;...
+## $ PaymentMethod    &lt;chr&gt; &quot;Electronic check&quot;, &quot;Mailed check&quot;, &quot;Mailed c...
+## $ MonthlyCharges   &lt;dbl&gt; 29.85, 56.95, 53.85, 42.30, 70.70, 99.65, 89....
+## $ TotalCharges     &lt;dbl&gt; 29.85, 1889.50, 108.15, 1840.75, 151.65, 820....
+## $ Churn            &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;No&quot;, ...</code></pre>
+<ol style="list-style-type: decimal">
+<li>כעת, השתמש בתרשים כדי להציג את הפיזור של כלל ההוצאות (TotalCharges) למול וותק הלקוח (tenure).
+<ol style="list-style-type: lower-alpha">
+<li>איזה צורה יוצר התרשים? מדוע?</li>
+<li>השתמש בפאות (facets) כדי לפצל את התרשים לפי סוג החוזה (משתנה Contract), והוסף החלקה (<code>stat_smooth</code>). מה אתה למד מהתוצאה?</li>
+</ol></li>
+<li>בחן את ההתפלגות של ההוצאות החודשיות (MonthlyCharges) למול נטישה (Churn)
+<ol style="list-style-type: lower-alpha">
+<li>האם יש קשר בין נטישה לבין התשלום החודשי? האם משתמשים נוטשים שילמו יותר או פחות?</li>
+<li>כעת, בנה תרשים נוסף הבוחן את ההוצאות החודשיות למול נטישה, אך גם מפריד בין סוגי החיבור לאינטרנט (InternetService). האם הקביעה שלך בסעיף הקודם משתנה באיזשהו אופן? מדוע זה כך?</li>
+<li>בנו תרשים המציג את כמות הלקוחות שנטשו ולא נטשו, למול סוג השירות שקיבלו. האם תרשים זה עוזר להסביר את התופעה שבסעיף הקודם?</li>
+</ol></li>
+</ol>
+</div>
 </div>
 <div id="-" class="section level2">
-<h2>השיעור הבא</h2>
-<p>בשיעור הבא “נחזור ליסודות” עם עקרונות הקידוד ב-R, סוגי משתנים, פונקציות, לולאות, אופרטורים, ועוד.</p>
+<h2>הפרק הבא</h2>
+<p>בפרק הבא “נחזור ליסודות” עם עקרונות הקידוד ב-R, סוגי משתנים, פונקציות, לולאות, אופרטורים, ועוד.</p>
 <hr />
 </div>
 </div>
