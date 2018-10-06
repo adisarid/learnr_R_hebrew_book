@@ -1,5 +1,5 @@
 ---
-title: "Data Science עם R - פרק 3 - מבני הנתונים ב-R"
+title: "Data Science עם R - פרק 3 - יסודות התכנות ב-RR"
 author: "עדי שריד"
 output: html_document
 ---
@@ -9,6 +9,93 @@ p, h1, h2, h3, h4, ul, ol {
   direction: rtl;
 }
 ```
+
+בפרקים הקודמים כבר נגענו בפקודות שונות, וקצת בתכנות ב-R, אך בפרק הזה נציג את יסודות התכנות ב-R באופן מסודר.
+
+כשמעלים את RStudio, אז מופיע בצד התחתון שלו ה-Console. בחלק זה ניתן להריץ קוד כמו "מחשבון". לדוגמה:
+
+```{r console}
+cos(2*pi)
+log(10^5)
+log10(10^5)
+sqrt(144)
+12^2
+```
+
+ניתן ליצור אובייקטים חדשים עם אופרטור ההשמה `->`, באופן הבא:
+
+```{r assignment}
+
+foo <- "bar"
+foo
+bar <- 99*111
+bar
+
+```
+
+## איך קובעים שמות ב-R?
+
+שמות משתנים חייבים להתחיל באות (גדולה או קטנה), ויכולים להכיל אותיות, מספרים, קו תחתון `_` ונקודה`.`.
+כדי לבנות משתנים ששמם הוא בעל משמעות, לעיתים תידרש יותר ממילה אחת, לשם כך מומלץ להפריד עם `_`.
+
+R הוא רגיש לאותיות קטנות וגדולות (case sensitive), בדרך כלל מקובל להשתמש באותיות קטנות בלבד.
+
+הרצות לדוגמה (מה-console, לכן מופיע התו "<" בתחילת שורה. כדי להריץ את הקוד השמיטו תו זה.
+
+```
+
+> short_name >- 3
+> long_description <- "This is a description of foo bar"
+
+> r_is_great <- 10
+> r_is_great
+
+> r_is_great
+[1] 10
+> R_is_great
+Error: object 'R_is_great' not found
+
+```
+
+## שימוש בפונקציות
+
+ל-R יש פונקציות מובנות, ופונקציות הנמצאות בתוך חבילות.
+קריאה לפונקציה מתבצעת באופן הבא:
+
+```
+
+function_name(arg1 = val1, arg2 = val2, ...)
+
+```
+
+אם הפונקציה אינה ב-Base R אז ראשית צריך לטעון את החבילה באחד משני האופנים הבאים:
+
+```
+# either do this
+package_name::function_name(...)
+
+# or first load, then use freely
+library(package_name)
+function_name(...)
+```
+
+***
+
+### תרגיל
+
+   1. נסה לתקן ולהריץ את הקוד הבא:
+
+```
+
+```
+
+```{r fixed code, include=FALSE}
+
+
+
+```
+
+***
 
 ## סוגי מבנה נתונים ב-R
 
@@ -24,7 +111,6 @@ p, h1, h2, h3, h4, ul, ol {
 לדוגמה:
 
 ```{r, defining examples}
-
 integer_example <- 10
 integer_example
 numeric_example <- pi # pi is a reserved word...
@@ -33,7 +119,7 @@ character_examples <- "hello world"
 character_examples
 date_example <- as.Date("2018-10-01")
 date_example
-factor_example <- as_factor(c("big", "big", "small", "medium", "small", "big", "bigger"))
+factor_example <- as.factor(c("big", "big", "small", "medium", "small", "big", "bigger"))
 factor_example
 summary(factor_example)
 ```
