@@ -16,7 +16,6 @@ img {
   margin-right: auto;
 }
 
-
 ```
 
 מדעי הנתונים (או Data Science) כפי שנקרא המונח בשפה המקצועית, מערב תחומי מדע שונים, לדוגמה: מתמטיקה, סטטיסטיקה, מדעי המחשב, הנדסת תעשיה, ועוד.
@@ -42,11 +41,12 @@ img {
 
 הקורס משלב את הטכניקה עם הרבה דוגמאות מהעולם העסקי והאקדמי. מי שמעוניין להשלים גם ידע תיאורתי רלוונטי, יכול להיעזר בספר המעולה הבא:
 
-   * The Elements of Statistical Learning: Data Mining, Inference, and Prediction, Second Edition, by T. Hastie, J, Friedmand, and R. Tibshirani. Springer, 2009. Available online (free ebook).
+<p style="direction:ltr; text-align:left">The Elements of Statistical Learning: Data Mining, Inference, and Prediction, Second Edition, by T. Hastie, J, Friedmand, and R. Tibshirani. <em>Springer</em>, 2009. Available online (as free ebook), here: <a href="https://web.stanford.edu/~hastie/Papers/ESLII.pdf">https://web.stanford.edu/~hastie/Papers/ESLII.pdf</a>, (feched 02/10/2018).</p>
+
 
 ספר מצויין נוסף (ובהרבה מובנים תוכנו מתלכד עם תוכן הקורס) הוא הספר הבא:
 
-   * R for Data Science, by G. Grolemund, and H. Wickham, O'reilly (2017). Available online: [http://r4ds.had.co.nz/](http://r4ds.had.co.nz/), (feched 26/07/2018).
+<p style="direction:ltr; text-align:left">R for Data Science, by G. Grolemund, and H. Wickham, <em>O'reilly</em> (2017). Available online: <a href="https://r4ds.had.co.nz/">https://r4ds.had.co.nz/</a>, (feched 26/07/2018).</p>
 
 הקורס נוגע בנושאים מגוונים: 
 
@@ -218,7 +218,7 @@ ggplot(time_spent_tenure, aes(x =
 
 ```
 
-השתמשנו במשחק הזה עם נתונים, כדי להראות כמה מידע אפשר לחלץ מסקר קצר עם 7 משתנים בסה"כ. כעת נציג כמה דוגמאות נוספות לשימוש במודלים של מדע הנתונים."
+השתמשנו במשחק הזה עם נתונים, כדי להראות כמה מידע אפשר לחלץ מסקר קצר עם 7 משתנים בסה"כ. כעת נציג כמה דוגמאות נוספות לשימוש במודלים של מדע הנתונים.
 
 ## מוטיבציה - דוגמאות ושימושים
 
@@ -240,7 +240,7 @@ ggplot(time_spent_tenure, aes(x =
 
 דוגמאות אלו אומצו מהספר:
 
-   * Rob J. Hyndman and George Athansasopoulos, Forecasting: Principles and Practice 2nd edition, _OTexts_, 2018. Available Online (feched Sep 2018): [https://otexts.org/fpp2/](https://otexts.org/fpp2/)
+<p style="direction:ltr; text-align:left">Rob J. Hyndman and George Athansasopoulos, Forecasting: Principles and Practice 2nd edition, <em>OTexts</em>, 2018. Available Online <a href="">https://otexts.org/fpp2/</a> (fetched Sep 2018)</p>
 
 ### הסתברות לרכישה וחיזוי נטישה (estimating conversion probability and churn)
 
@@ -280,7 +280,7 @@ ggplot(time_spent_tenure, aes(x =
 install.packages("tidyverse")
 ```
 
-## השיעור הבא
+## הפרק הבא
 
 השיעור הבא יעסוק בויז'ואליזציה, ולמה?
 
