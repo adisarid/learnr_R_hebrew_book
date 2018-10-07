@@ -1,5 +1,5 @@
 ---
-title: "Data Science עם R - פרק 3 - יסודות התכנות ב-RR"
+title: "Data Science עם R - פרק 3 - יסודות התכנות ב-R"
 author: "עדי שריד"
 output: html_document
 ---
@@ -35,8 +35,8 @@ bar
 
 ## איך קובעים שמות ב-R?
 
-שמות משתנים חייבים להתחיל באות (גדולה או קטנה), ויכולים להכיל אותיות, מספרים, קו תחתון `_` ונקודה`.`.
-כדי לבנות משתנים ששמם הוא בעל משמעות, לעיתים תידרש יותר ממילה אחת, לשם כך מומלץ להפריד עם `_`.
+שמות אובייקטים חייבים להתחיל באות (גדולה או קטנה), ויכולים להכיל אותיות, מספרים, קו תחתון `_` ונקודה`.`.
+כדי לבנות אובייקטים ששמם הוא בעל משמעות, לעיתים תידרש יותר ממילה אחת, לשם כך מומלץ להפריד עם `_`.
 
 R הוא רגיש לאותיות קטנות וגדולות (case sensitive), בדרך כלל מקובל להשתמש באותיות קטנות בלבד.
 
@@ -44,7 +44,7 @@ R הוא רגיש לאותיות קטנות וגדולות (case sensitive), ב�
 
 ```
 
-> short_name >- 3
+> short_name <- 3
 > long_description <- "This is a description of foo bar"
 
 > r_is_great <- 10
@@ -83,19 +83,77 @@ function_name(...)
 
 ### תרגיל
 
-   1. נסה לתקן ולהריץ את הקוד הבא:
+   1. נסו לתקן ולהריץ את הקוד הבא. מומלץ לנסות ולהריץ אותו ב-console שלב אחרי שלב כדי לבדוק מה לא עובד...
 
 ```
+library(tidyvers)
+
+glimpse(iris)
+
+ggplot(data = iris) + 
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  + geom_smooth(method = "lm")
+
+fliter(iris, Species = "setosa")
+
+
 
 ```
 
 ```{r fixed code, include=FALSE}
 
+library(tidyverse) # don't forget e
 
+ggplot(data = iris) + 
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) + 
+  geom_smooth(method = "lm", aes(x = Sepal.Length, y = Sepal.Width, color = Species)) # omit "+"" in this line, and add the aesthetics argument
 
 ```
 
 ***
+
+## תחביר ב-R
+
+ב-Cheat sheet הבא מפורטים שלושה סוגים של תחבירים (syntax.pdf):
+[https://github.com/rstudio/cheatsheets/raw/master/syntax.pdf](https://github.com/rstudio/cheatsheets/raw/master/syntax.pdf)
+
+במהלך הקורס ניתן דגש לתחביר Tidyverse, אך מומלץ להכיר גם את התחבירים האחרים. לדוגמה, חישוב ממוצע בתחביר הבסיסי ובתחביר Tidyverse יראה כך:
+
+```{r syntax difference, warning=FALSE}
+
+# base R syntax:
+# calculate average
+mean(mtcars$mpg)
+
+# average vs. discrete var
+mean(mtcars$mpg[mtcars$cyl==4])
+mean(mtcars$mpg[mtcars$cyl==6])
+mean(mtcars$mpg[mtcars$cyl==8])
+
+# plot histogram
+hist(mtcars$disp)
+
+# subsetting
+mtcars[mtcars$mpg > 30,]
+
+# Tidyverse syntax
+library(tidyverse)
+
+# calculate average
+mtcars %>%
+  summarize(mean(mpg))
+
+# average vs. discrete var
+mtcars %>%
+  group_by(cyl) %>%
+  summarize(mean(mpg))
+
+# plot histogram
+ggplot(mtcars, aes(x=disp)) + geom_histogram()
+
+# subsetting
+mtcars %>% filter(mpg > 30)
+```
 
 ## סוגי מבנה נתונים ב-R
 
@@ -105,6 +163,7 @@ function_name(...)
    * תו (character)
    * תאריך (POSIXct)
    * קטגוריות (factors)
+   * לוגיים (logicals)
 
 שימו לב שהשמה נראית כחץ `->` (בעדיפות) או כשיוויון `=`
 
@@ -122,9 +181,11 @@ date_example
 factor_example <- as.factor(c("big", "big", "small", "medium", "small", "big", "bigger"))
 factor_example
 summary(factor_example)
+logical_example <- c(TRUE, TRUE, FALSE, TRUE)
+logical_example
 ```
 
-מערכים של ערכים כאלו יהיו שייכים לאחד מהסוגים הבאים:
+בעצם כל האובייקים ב-R הם מערכים (גם אם יש בהם רק ערך אחד, הם עדיין מערכים ולא סקלר). דוגמאות:
 
    * וקטור
    * מטריצה (מערך דו-מימדי)
@@ -160,10 +221,16 @@ dbl_vector[1:3]
 
 ## פעולות אריתמטיות
 
-פעולות אריתמטיות עובדות על משתנים ומערכים כל עוד גודלם תואם (והסוג שלהם מאפשר פעולות אלו)
+פעולות אריתמטיות עובדות על אובייקטים ומערכים כל עוד גודלם תואם (והסוג שלהם מאפשר פעולות אלו)
 ```{r arithmatics}
 c(1, pi, 3.3, sqrt(2)/2)^2
 #c("hello", "world", 1, pi) + 1 # yields an error - you can't add 1 to a character
+```
+
+```
+> c("hello", "world", 1, pi) + 1
+Error in c("hello", "world", 1, pi) + 1 : 
+  non-numeric argument to binary operator
 ```
 
 ## לולאות, אופרטורים, והתניות
@@ -182,9 +249,14 @@ for (i in vector){
 
 שימוש בלולאות לעומת פעולות וקטוריות.
 
-   1. הגדר וקטור של כל המספרים הזוגיים בין 1-1000. באפשרותך להיעזר בפונקציה `seq`. כדי ללמוד על הפונקציה `seq` הקש ?seq ב-console
+   1. הגדר וקטור של כל המספרים **הזוגיים** בין 1-10000000. באפשרותך להיעזר בפונקציה `seq`. כדי ללמוד על הפונקציה הקש ב-console:
+
+```
+?seq
+```
+
    2. האם יש דרך אחרת להגדיר את הוקטור מבלי להשתמש בפונקציה `seq`?
-   3. חשב וקטור חדש שהוא הוקטור שקיבלת בריבוע
+   3. חשב וקטור חדש שהוא הוקטור שקיבלת בריבוע, בשתי דרכים שונות:
       a. באמצעות לולאת `for`
       b. באמצעות פעולה וקטורית
    4. השתמש בפונקציה `Sys.time` כדי למדוד את משך הזמן שנדרש לשתי הפעולות
@@ -207,7 +279,7 @@ Sys.time() - start
 
 ***
 
-אופרטורים לוגיים ב-R:
+### אופרטורים לוגיים ב-R:
 
    * או `|`
    * וגם `&`
@@ -220,13 +292,67 @@ Sys.time() - start
 5 == 6
 6 == 6
 5 == 6 | 6 == 6
+Inf > 10^10
 TRUE & FALSE
 xor(TRUE, FALSE)
 FALSE == !TRUE
 FALSE != TRUE
 ```
 
-התניות
+***
+
+### תרגיל - השוואות
+
+   1. מדוע השיוויון הבא נכשל?
+   2. מדוע הפונקציה `near` עובדת?
+   
+```{r sqaure root}
+
+x <- sqrt(2)^2
+
+x == 2
+
+dplyr::near(sqrt(2)^2, 2)
+
+```
+
+***
+
+### ערכים חסרים
+
+בסטטיסטיקה, לעיתים קרובות ישנם "ערכים חסרים", תצפיות שלא נמדדו או לא תועדו. ב-R, ערכים אלו מיוצגים על ידי `NA`.
+
+***
+### תרגול `NA`
+
+   1. בדקו את תוצאת הפעולות הבאות:
+
+```
+NA+0
+NA*1
+NA^0
+NA | TRUE
+NA & FALSE
+NA*0
+
+```
+
+```{r na stuff, include=FALSE}
+
+NA+0
+NA*1
+NA^0
+NA | TRUE
+NA & FALSE
+NA*0
+
+```
+
+   2. האם אתם מצליחים להבין את ההיגיון מאחורי תוצאות החישובים הללו?
+
+***
+
+### התניות
 
 ```
 if (condition){
@@ -238,33 +364,13 @@ if (condition){
 }
 ```
 
-## חבילות
+בשלבים הראשוניים של עבודה עם R מומלץ להיעזר ב-Cheat sheet של "base-r.pdf" בקישור:
+[http://github.com/rstudio/cheatsheets/raw/master/base-r.pdf](http://github.com/rstudio/cheatsheets/raw/master/base-r.pdf)
+
+## חבילות הרחבה
 
 מעבר לפקודות הבסיסיות שנקראות "Base R", ישנן חבילות רבות שמעשירות את R. מה שהופך את R לשפה מאוד אטרקטיבית משום שלהרבה מהצרכים שבהם אתם עשויים להיתקל, כבר פותחו פתרונות.
 
-### איך עובדים עם חבילות?
+## בפרק הבא
 
-כדי להתקין חבילה, כל מה שצריך לעשות הוא להפעיל את הפקודה
-
-```
-install.packages(pkgs)
-```
-
-פקודה זו תתחבר ל-CRAN (מאגר החבילות של R), תוריד את החבילה ותתקין אותה על המחשב.
-
-***
-## תרגיל
-
-   1. התקן/י את חבילת `tidyverse` על המחשב שלך.
-
-***
-
-החבילה שהתקנת היא "חבילה של חבילות", היא מכילה חבילות שימושיות כגון `ggplot2` לתרשימים `tibble` לבניית מבני נתונים מסוג tibble, `dplyr` ו-`tidyr` למניפולציות של נתונים, `magrittr` ליצירת אופרטור חדש שנדון בו בהמשך, ועוד חבילות רבות.
-
-כדי להשתמש בפונקציות הנמצאות בחבילה ניתן להשתמש בפקודה `library` - מה שיקרא את כל הפקודות של החבילה לזיכרון. לחילופין, ניתן גם להשתמש רק בפקודה מסוימת מבלי לקרוא את כל החבילה לזיכרון. אופציה זו שימושית כאשר צפוי שימוש מוגבל בלבד בפקודה מסוימת. כדי לקרוא לפקודה בחבילה מבלי לטעון את כל החבילה יש להשתמש ב `::`. לדוגמה, בעת קריאת קובץ עלינו להשתמש בפקודה לקריאת קובץ פעם אחת בתחילת העבודה ולכן נוכל להסתפק בצורה זו.
-
-```
-readxl::read_excel(...)
-```
-
-(מתוך חבילת `readxl` השתמש בפונקצית `read_excel`).
+בפרק הבא נעמיק בחבילות חשובות המשמשות לעיבוד נתונים ברמה הבסיסית (סינונים, טרנספורמציות, וכו')
