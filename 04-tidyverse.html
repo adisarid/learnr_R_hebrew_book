@@ -505,23 +505,50 @@ google_play %&gt;%
 </div>
 <div id="-1" class="section level3">
 <h3>תרגיל</h3>
-<p>ב-R ישנם שני סוגים של אופרטורים לוגיים מסוג “או” ושני סוגים של אופרטרים לוגיים מסוג “וגם”. בתרגיל זה נבין מהם ההבדלים ביניהם ונתרגל את פונקציית filter.</p>
 <ol style="list-style-type: decimal">
-<li>בנו את הוקטורים הבאים:</li>
+<li>סננו מקובץ googleplaystore.csv את כל האפליקציות שמחירם חיובי, לשם כך השתמשו במשתנה Type.</li>
+<li>נסו להשתמש במשתנה Price, האם הצלחתם? למה?</li>
+<li>סננו את כל האפליקציות המיועדות לעסקים או שהדירוג שלהם מעל 4.5.</li>
 </ol>
-<pre><code>vec1 &lt;- c(TRUE, TRUE, FALSE, TRUE)
-vec2 &lt;- c(FALSE, TRUE, TRUE FALSE)</code></pre>
-<p>2.בדקו מה ההבדל בין שתי הגרסאות הבאות</p>
-<pre><code>vec1 | vec2
-# versus
-vec1 || vec2
-
-vec1 &amp; vec2
-#versus
-vec1 &amp;&amp; vec2
-</code></pre>
-<ol start="3" style="list-style-type: decimal">
-<li>הסבירו, מה עושה אופרטור כפול לעומת אופרטור בודד?</li>
+<hr />
+</div>
+<div id="--arrange" class="section level3">
+<h3>פקודת מיון <code>arrange</code></h3>
+<p>כדי למיין את השורות בקובץ נתונים, לפי עמודות מסוימות, ניתן להשתמש בפקודה <code>arrange</code>. כך לדוגמה, כדי למיין את הקובץ google_play לפי דירוג עולה, ושם קטגוריה נשתמש בקוד:</p>
+<pre><code>google_play %&gt;%
+   arrange(Rating, Category)</code></pre>
+<p>כדי למיין משתנה מסוים לפי סדר יורד, עוטפים את המשתנה בפונקציה <code>desc</code></p>
+<pre class="r"><code>google_play %&gt;%
+   arrange(desc(Rating))</code></pre>
+<pre><code>## # A tibble: 10,841 x 13
+##    App   Category Rating Reviews Size  Installs Type  Price
+##    &lt;chr&gt; &lt;chr&gt;     &lt;dbl&gt;   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;
+##  1 Life~ 1.9          19      NA 1,00~ Free     0     Ever~
+##  2 Hoji~ COMICS        5      15 37M   1,000+   Free  0    
+##  3 Amer~ DATING        5       5 4.4M  1,000+   Free  0    
+##  4 Awak~ DATING        5       2 70M   100+     Free  0    
+##  5 Spin~ DATING        5       5 9.3M  500+     Free  0    
+##  6 Girl~ DATING        5       6 5.0M  100+     Free  0    
+##  7 Onli~ DATING        5       5 5.0M  100+     Free  0    
+##  8 Spee~ DATING        5       3 25M   100+     Free  0    
+##  9 SUMM~ EVENTS        5       4 61M   500+     Free  0    
+## 10 Pros~ EVENTS        5      16 2.3M  100+     Free  0    
+## # ... with 10,831 more rows, and 5 more variables: `Content Rating` &lt;chr&gt;,
+## #   Genres &lt;chr&gt;, `Last Updated` &lt;chr&gt;, `Current Ver` &lt;chr&gt;, `Android
+## #   Ver` &lt;chr&gt;</code></pre>
+<hr />
+</div>
+<div id="-2" class="section level3">
+<h3>תרגיל</h3>
+<ol style="list-style-type: decimal">
+<li>מיינו את הקובץ לפי סדר יורד של הדירוג, ולפי סדר יורד של הביקורות.</li>
+<li>סננו ערכים לא חוקיים של דירוג (שאינם בין 1-5), השתמשו בפונקציה <code>between</code></li>
+<li>סננו ערכים שהם NA מתוך כלל המשתנים
+<ol style="list-style-type: lower-alpha">
+<li>רמז ראשון, השתמשו ב-<code>is.na</code></li>
+<li>רמז שני, למתקדמים, כדי לחסוך אפשר להשתמש ב-<code>filter_all</code></li>
+</ol></li>
+<li>כמה רשומות נותרו בקובץ?</li>
 </ol>
 </div>
 </div>
