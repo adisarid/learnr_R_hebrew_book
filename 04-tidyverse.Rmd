@@ -18,8 +18,12 @@ p, h1, h2, h3, h4, ul, ol {
 ראשית, נטען חבילות אלו ונקרא את קובץ הנתונים עמו עבדנו בפרקים הקודמים.
 
 ```{r read-data, warning=FALSE, message=FALSE}
-library(dplyr)
-library(tidyr)
+# You can specifically call the two:
+#library(dplyr)
+#library(tidyr)
+# But I usually load tidyverse which takes care of everything:
+library(tidyverse)
+
 kaggle.survey17 <- readr::read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
 
 glimpse(kaggle.survey17)
@@ -28,6 +32,8 @@ glimpse(kaggle.survey17)
 
 פקודת `glimpse` שבה השתמשנו גם שייכת ל-dplyr והיא מספקת "הצצה" לתוך הנתונים.
 באמצעות הפקודה אנחנו רואים את השדות השונים שנמצאים בקובץ שקראנו, מאיזה סוג הם, ומספר ערכים ראשונים בכל שדה.
+
+### פקודת `select`
 
 
 הפקודה הבאה שנלמד היא `select`, פקודה זו מאפשרת לנו לבחור רק משתנים מסוימים, וכך לעבוד עם מבנה נתונים נקי יותר.
@@ -52,6 +58,18 @@ kaggle.survey17 %>%
 ```
 אופרטור המקטרת דואג להעביר לכל פונקציה בשרשרת את התוצאה של הפונקציה הקודמת. כך מבנה הנתונים עובר לתוך `select` ותוצר הפקודה `select` עובר לתוך `glimpse`. מעתה נשתמש באופרטור זה כאשר מדובר בשרשראות של פקודות מ-dplyr ומ-tidyr.
 
+פונקציית העזר `start_with` עוזרת לנו לדלות את כל המשתנים ששמם מתחיל במחרוזת "WorkChallenge". פונקציות עזר נוספות כוללות:
+
+```
+starts_with(match)
+ends_with(match)
+matches(match)
+contains(match)
+one_of(...) # variables in character vector
+matches(regex_str) # match a regular expression
+
+```
+
 ***
 ### תרגיל
 
@@ -71,3 +89,67 @@ google_play_ver <- google_play %>%
 ```   
 
 ***
+
+### פקודת `filter`
+
+פקודת `filter` מאפשרת לנו לסנן נתונים לפי קריטריונים (תנאים לוגיים)
+לדוגמה, כדי לסנן רק אפליקציות עם דירוג ממוצע מעל 4 או מתחת ל-2 נשתמש בפקודה:
+
+```
+google_play %>%
+   filter(Rating > 4 | Rating < 2)
+```
+
+כדי לסנן רק את האפליקציות מקטגורית משפחה נשתמש בפקודה
+
+```
+google_play %>%
+   filter(Category == "FAMILY")
+```
+
+ניתן גם להשתמש בתנאים מורכבים יותר או לשרשר תנאים באופן הבא:
+
+```{r multiple criteria}
+
+# Best option, but a matter of personal flavour
+google_play %>%
+  filter(Rating > 4 | Rating <2) %>%
+  filter(Category == "FAMILY")
+
+# Also ok, same result. Multiple criteria within filter as seperate arguments, also treated as "and"
+google_play %>%
+  filter(Rating > 4 | Rating <2, 
+         Category == "FAMILY")
+
+# Less readable but still the same
+google_play %>%
+  filter((Rating > 4 | Rating <2) & (Category == "FAMILY"))
+```
+
+***
+
+### תרגיל
+
+ב-R ישנם שני סוגים של אופרטורים לוגיים מסוג "או" ושני סוגים של אופרטרים לוגיים מסוג "וגם". בתרגיל זה נבין מהם ההבדלים ביניהם ונתרגל את פונקציית filter.
+
+   1. בנו את הוקטורים הבאים: 
+
+```
+vec1 <- c(TRUE, TRUE, FALSE, TRUE)
+vec2 <- c(FALSE, TRUE, TRUE FALSE)
+```
+
+   2.בדקו מה ההבדל בין שתי הגרסאות הבאות
+
+```
+vec1 | vec2
+# versus
+vec1 || vec2
+
+vec1 & vec2
+#versus
+vec1 && vec2
+
+```
+
+   3. הסבירו, מה עושה אופרטור כפול לעומת אופרטור בודד?
