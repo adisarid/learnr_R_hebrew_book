@@ -24,7 +24,7 @@ p, h1, h2, h3, h4, ul, ol {
 # But I usually load tidyverse which takes care of everything:
 library(tidyverse)
 
-kaggle.survey17 <- readr::read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+kaggle.survey17 <- readr::read_csv("data-files/kaggle-survey-2017/multipleChoiceResponses.csv")
 
 glimpse(kaggle.survey17)
 
@@ -82,7 +82,7 @@ matches(regex_str) # match a regular expression
 ```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
 library(tidyr)
 library(dplyr)
-google_play <- readr::read_csv(file = "02-data/googleplaystore.csv")
+google_play <- readr::read_csv(file = "data-files/googleplaystore.csv")
 glimpse(google_play)
 google_play_ver <- google_play %>% 
   select(ends_with("Ver"), contains("R", ignore.case = FALSE))

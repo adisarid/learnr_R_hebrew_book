@@ -50,9 +50,9 @@ p, h1, h2, h3, h4, ul, ol {
 
 ```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
 library(tidyverse)
-kaggle_scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+kaggle_scheme <- read_csv("data-files/kaggle-survey-2017/schema.csv")
 # Now to load the actual data:
-kaggle_survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+kaggle_survey17 <- read_csv("data-files/kaggle-survey-2017/multipleChoiceResponses.csv")
 time_spent <- kaggle_survey17 %>%
   select(one_of(kaggle_scheme$Column[221:226]))
 time_spent_gathered <- time_spent %>%
@@ -140,7 +140,7 @@ ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +
 הקובץ נוצר באמצעות scraping, טכניקה שבאמצעותה סורקים אתרים ומחלצים מתוכם נתונים לתוך מבנה מסודר וטבלאי, כפי שנמצא בקובץ.
 
 להורדת הקובץ ניתן להיכנס לקישור הבא:
-[https://github.com/adisarid/learnr_R_hebrew_book/blob/master/02-data/googleplaystore.csv](https://github.com/adisarid/learnr_R_hebrew_book/blob/master/02-data/googleplaystore.csv)
+[https://github.com/adisarid/learnr_R_hebrew_book/blob/master/data-files/googleplaystore.csv](https://github.com/adisarid/learnr_R_hebrew_book/blob/master/data-files/googleplaystore.csv)
 
 אנו נשתמש בקובץ זה כדי לתרגל צורות שונות של ויז'ואליזציה. 
 כדי להקל על ההתחלה של השימוש ב-R, חלק מהפקודות כבר ישנן, ועליכם להשלים את הפרמטרים המתאימים במקומות שבהם ישנו XXX. ככל שנתקדם בתרגילים, יותר חלקים יהיו חסרים (עד לשלב שבו לא יהיו פקודות, ותצטרכו לכתוב הכל בעצמכם).
@@ -156,7 +156,7 @@ glimpse(XXX)
 
 ```
 ```{r read-googleplaystore, warning=FALSE, message=FALSE, fig.width=10, include=FALSE}
-google_play <- read_csv(file = "02-data/googleplaystore.csv")
+google_play <- read_csv(file = "data-files/googleplaystore.csv")
 glimpse(google_play)
 ```
 

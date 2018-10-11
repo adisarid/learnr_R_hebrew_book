@@ -105,7 +105,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 
 # This is just the data scheme ("codebook")
-kaggle_scheme <- read_csv("01-data/kaggle-survey-2017/schema.csv")
+kaggle_scheme <- read_csv("data-files/kaggle-survey-2017/schema.csv")
 
 # We are going to need the following fields:
 kaggle_scheme[c(221:226, 87), 1:2] %>%
@@ -116,7 +116,7 @@ kaggle_scheme[c(221:226, 87), 1:2] %>%
 
 ```{r kaggle-data, warning=FALSE, message=FALSE, fig.width=10}
 # Now to load the actual data:
-kaggle_survey17 <- read_csv("01-data/kaggle-survey-2017/multipleChoiceResponses.csv")
+kaggle_survey17 <- read_csv("data-files/kaggle-survey-2017/multipleChoiceResponses.csv")
 time_spent <- kaggle_survey17 %>%
   select(one_of(kaggle_scheme$Column[221:226]), Tenure)
 time_spent_gathered <- time_spent %>%
