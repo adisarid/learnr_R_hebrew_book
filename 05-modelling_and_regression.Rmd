@@ -1,0 +1,11 @@
+---
+title: "Data Science עם R - מידול ורגרסיה"
+author: "עדי שריד"
+output: html_document
+---
+
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
