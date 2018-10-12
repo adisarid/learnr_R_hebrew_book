@@ -1,5 +1,5 @@
----
-title: "Data Science עם R - פרק 4 - קריאת נתונים, טרנספורמציות, ותכנות פונקציונלי באמצעות tidyverse"
+﻿---
+title: "Data Science עם R - סידור הנתונים לקראת עבודה, היכרות עם tidyverse"
 author: "עדי שריד"
 output: html_document
 ---
@@ -13,7 +13,10 @@ p, h1, h2, h3, h4, ul, ol {
 ## טרנספורמציה של נתונים
 
 כפי שראינו בחלק הראשון חלק ניכר מהעבודה של Data Scientists הוא ניקוי וסידור נתונים.
-חבילות dplyr, tidyr, נבנו כדי לספק סט כלים רחב שמסייע בכלל פעילויות אלו, באופן אינטואיטיבי ויעיל.
+חבילות dplyr, tidyr, נבנו כדי לספק סט כלים רחב שמסייע בכלל פעילויות אלו, באופן אינטואיטיבי ויעיל, חבילות אלו הן חלק ממכלול tidyverse איתו עבדנו גם בפרקים הקודמים.
+
+גיליון ה-Cheatsheet שילווה אותנו בחלק זה נמצא בקישור הבא:
+[https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf](https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf)
 
 ראשית, נטען חבילות אלו ונקרא את קובץ הנתונים עמו עבדנו בפרקים הקודמים.
 
@@ -100,6 +103,13 @@ google_play %>%
    filter(Rating > 4 | Rating < 2)
 ```
 
+***
+
+### שאלה למחשבה
+איך ניתן לשנות את הקוד מעלה כך שיעשה שימוש בפקודה `between` אבל יפיק את אותה התוצאה?
+
+***
+
 כדי לסנן רק את האפליקציות מקטגורית משפחה נשתמש בפקודה
 
 ```
@@ -174,3 +184,176 @@ google_play %>%
   filter_all(all_vars(!is.na(.)))
 
 ```
+
+### פקודת `mutate`
+
+פקודה זו משמשת אותנו כדי לבנות משתנים חדשים, וכבר נתקלנו בה בפרקים הקודמים. לדוגמה כדי להגדיר משתנה חדש שהוא ה`log` של מספר הביקורות נשתמש בפקודה:
+
+```{r mutate example 1}
+google_play_w_log <- google_play %>%
+   mutate(log_Reviews = log(Reviews))
+
+glimpse(google_play_w_log)
+
+```
+
+בתוך פקודת `mutate` ניתן להפעיל הרבה טרנספורמציות, והתוצר שלה תמיד יהיה וקטור לפי מבנה הנתונים שבו אנו משתמשים. 
+בתוך מבנה הנתונים של google_play יש משתנה הנקרא `Last Updated` והוא בפורמט מחרוזת (character) למרות שהוא בעצם תאריך. 
+כדי לעדכן אותו לפורמט תאריכי נשלב את פקודת `mutate` ביחד עם פקודה שיודעת להמיר מחרוזת לתאריך (`parse_date_time`).
+לאחר מכן, נבנה משתנה תאריך חדש, המייצג את הרבעון והשנה בלבד.
+
+עבודה עם וקטור המיוצג כתאריך עדיפה על פני מחרוזת (character), משום שהיא מאפשרת לנו להתייחס לתאריך כאל זמן (נניח מיין לפי תאריך, לקבץ לפי רבעונים, וכדומה).
+
+```{r mutate example with lubridate}
+google_play_w_date <- google_play_w_log %>% 
+  mutate(log_Reviews = log(Reviews)) %>%
+  mutate(`Last Updated` = lubridate::parse_date_time(`Last Updated`, orders = "m, d, y")) %>%
+  mutate(`Updated quarter` = lubridate::round_date(`Last Updated`, unit = "quarter")) %>%
+  arrange(`Last Updated`)
+
+glimpse(google_play_w_date)
+
+ggplot(google_play_w_date, aes(x = factor(`Updated quarter`), y = Reviews)) + 
+  geom_boxplot() + 
+  scale_y_log10() + 
+  theme(axis.text.x = element_text(angle = 90)) + 
+  ylab("Reviews (log scale)") + 
+  xlab("Quarter")
+
+```
+
+### פקודות `group_by` ו-`summarise`
+
+עוד שתי פקודות משמעותיות בעבודה עם נתונים הן `group_by` ו-`summarise`. פקודות אלו משמשות כדי לקבץ נתונים לפי משתנה מסוים, וכדי לבצע פעולות לפי קיבוץ מסוים (לדוגמה חישוב ממוצע לפי קטגוריות).
+
+לדוגמה, נשתמש בהגדרת התאריך של אפליקציה כדי להראות את מספר האפליקציות בקובץ שהעדכון האחרון שלהם היה ברבעון מסוים, וגם כדי לחשב את ממוצע הביקורות שניתנו לכל אפליקציה (בחלוקה לפי רבעון עדכון אחרון).
+
+```{r example for group_by and summarize}
+
+google_play_summarized <- google_play_w_date %>%
+  group_by(`Updated quarter`) %>%
+  summarize(mean_reviews = mean(Reviews, na.rm = T),
+            num_apps = length(`Updated quarter`))
+
+ggplot(google_play_summarized, aes(x = `Updated quarter`, y = num_apps)) + 
+  geom_line() + 
+  xlab("Last quarter updated") + 
+  ylab("Number of documented apps in googleplay.csv")
+
+```
+
+***
+
+### שאלה למחשבה:
+האם אתם יודעים להסביר את צורת הגרף?
+למה הגרף "מתפוצץ" בשנת 2018?
+
+***
+
+### פקודות `gather` ו-`spread`
+
+פקודות `gather` ו-`spread` משנות את מבנה הנתונים. נשתמש בהם כאשר נאתר משתנים שצריכים להופיע כערכים או לחילופין ערכים הצריכים להופיע כמשתנים נפרדים.
+דוגמה לשימוש רלוונטי בהם הוא כאשר מבנה הנתונים מסודר בפעולות (transactions) המשויכולת ללקוחות מסוימים, ורוצים לקבץ לפי הפעולות הללו, לבצע פעולות מתמטיות מסוימות (נניח עם `summarise`), ואז להפוך את הפעולות למשתנים המתארים לקוח מסוים.
+
+הפקודות `gather` ו-`spread` הופכיות אחת לשניה.
+
+נמחיש את השימוש ב-gather עם קובץ האפליקציות. בקובץ האפליקציות יש משתנה סוגה (או ז'אנר בלעז, Genres). נחשב את מספר הביקורות הכללי שניתנו לאפליקציות מכל אחת מהסוגות, שהעדכון האחרון שלהן היה בשנת 2018.
+
+במשתנה זה לפעמים מופיעה סוגה אחת ולפעמים שתי סוגות. ראשית, נפצל את המחרוזת לשתי עמודות שיפרטו את הסוגות, באמצעות פקודת `separate`.
+נסנן את האפליקציות שעודכנו החל משנת 2018.
+לאחר מכן נבחר את המשתנים אותם נצטרך: שם האפליקציה (App), משתני הסוגה שיצרנו (Genre1, Genre2), ומספר הביקורות (Reviews).
+
+```{r example of gather and spread}
+
+head(unique(google_play$Genres))
+
+google_gathered <- google_play_w_date %>%
+  filter(!duplicated(App)) %>%
+  filter(lubridate::year(`Last Updated`) >= 2018) %>%
+  separate(Genres, sep = ";", into = c("Genre1", "Genre2")) %>%
+  select(App, Genre1, Genre2, Reviews) %>%
+  gather(Genre12, Genere_class, -App, -Reviews) %>%
+filter(!is.na(Genere_class))
+
+glimpse(google_gathered) 
+
+```
+
+כפי שניתן לראות, לאחר הפעלת הפקודה `gather` קיבלנו טבלה שאספה את העמודות Genre# לעמודה אחת, ובצמוד אליה את הפירוט של הסוגות. אפליקציות שלהם היו שני סיווגים, יופיעו בטבלה זו פעמיים (פעם אחת עם Genre1 ופעם אחרת עם Genre2). החישוב הבא מראה שיש בסה"כ 262 אפליקציות שהיה להן סיווג כפול.
+
+```{r two genres per app}
+
+google_gathered %>%
+  count(App) %>%
+  count(n)
+```
+
+כעת ניתן לחשב כמה ביקורות ניתנו בכל קטגוריה, כולל התחשבות בביקורות שניתנו לאפליקציות המסווגות ליותר מקטגוריה אחת:
+
+```{r total reviews including two genres}
+
+total_reviews_per_genre <- google_gathered %>%
+  group_by(Genere_class) %>%
+  summarize(total_reviews = sum(Reviews)) %>%
+  arrange(desc(total_reviews)) %>%
+  mutate(Genere_class = fct_inorder(Genere_class))
+
+ggplot(total_reviews_per_genre, aes(x = Genere_class, y = total_reviews)) + 
+  geom_col() + 
+  theme(axis.text.x = element_text(angle = 90)) + 
+  xlab("Genere") + 
+  ylab("Total reviews given in Genere") + 
+  ggtitle("Most frequently used?\nNumber of reviews per genere")
+
+```
+
+***
+
+### תרגיל מסכם - טרנספורמציות נתונים
+
+בתרגיל זה נשתמש בקובץ של מטופלים שנקבעה להם פגישה עם רופא, אך לא הגיעו לפגישה ("הבריזו"). מקור הקובץ מ-Kaggle בקישור:
+[https://www.kaggle.com/joniarroba/noshowappointments](https://www.kaggle.com/joniarroba/noshowappointments).
+
+בהמשך אנו נתאים מודלים לצורך חיזוי מתי מטופלים הם בעלי סבירות גבוהה שלא להגיע לפגישה שנקבעה להם. כרגע נשתמש בקובץ בשביל לתרגל את המרות הנתונים אותם למדנו בפרק זה.
+
+   1. הורד את קובץ הנתונים קרא אותו והצץ בנתונים.
+   
+```{r no show patients read file}
+
+library(tidyverse)
+patients <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv")
+glimpse(patients)
+```
+
+   2. השתמשו במשתנה המזהה מטופל בשביל לחשב את מספר הפעמים שהמטופל הגיע לפגישות, ואת מספר הפעמים שפגישה נקבעה אך המטופל לא הגיע. באפשרותכם להיעזר בשאלות הבאות:
+      a. לפי איזה משתנה עליכם לקבץ את הנתונים?
+      b. השתמשו בפונקצית `count` כדי לספור את אי ההופעות.
+      c. כעת, השתמשו בפונקצית `spread` כדי לפרק את העמודה של "No-show", לשתי עמודות של No ו-Yes.
+      d. לפונציית `spread` יש פרמטר fill. בדקו בעזרה של הפונקציה, מה ערך ברירת המחדל שלו? מה צריך להיות ערכו במקרה זה?
+      e. בנו משתנה חדש של סך הבדיקות. לשם כך השתמשו בפונקציה `mutate`.
+      f. בנו משתנה חדש של שיעור הבדיקות אליכם הגיע המטופל, מתוך סך הבדיקות שנקבעו לו.
+      g. מה אחוז המטופלים שהגיעו ללפחות 80% מהבדיקות שנקבעו להם?
+      h. מה אחוז המטופלים שפספסו לפחות בדיקה אחת?
+      i. מה מספר הבדיקות הממוצע שנקבע למטופל? האם ממוצע זה מוטה? למה ולאיזה כיוון?
+   
+```{r patient no show times, include=FALSE}
+
+no_show_times <- patients %>%
+  group_by(PatientId) %>%
+  count(`No-show`) %>%
+  spread(key = `No-show`, value = n, fill = 0) %>%
+  mutate(total_appointments = No + Yes) %>%
+  mutate(show_percent = No/total_appointments)
+
+sum(no_show_times$show_percent >= 0.8)/NROW(no_show_times)
+sum(no_show_times$Yes > 0)/NROW(no_show_times)
+mean(no_show_times$total_appointments) 
+# The average is biased since we're not seeing all the 0's (patients who had no appointments would not appear in this dataset!)
+
+```
+
+***
+
+בפרק זה עסקנו בנושאים "טכניים" שהם כלים הכרחיים בעבודה עם נתונים. כפי שראינו, הרבה פעמים ההתעסקות עם הנתונים אורכת זמן רב הרבה יותר מאשר הסקת מסקנות או הפקת מודלים.
+
+בפרק הבא, נצלול לעולם המודלים הסטטיסטיים ומודלים של חיזוי בבעיות שונות. נציג מעט תיאוריה סטטיסטית, ונתמקד במשפחה של מודלים פשוטים, אך בעלי חשיבות רבה - מודלי רגרסיה.
