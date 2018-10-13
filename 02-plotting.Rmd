@@ -170,7 +170,7 @@ glimpse(google_play)
 ```
 ggplot(data = XXX, aes(x = Category)) + 
   geom_bar(stat = "count") + 
-  theme(axis.title.x = element_text(angle = XXX))
+  theme(axis.text.x = element_text(angle = XXX))
   
 google_play <- google_play %>%
    filter(Category != "XXX")
