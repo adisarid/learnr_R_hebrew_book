@@ -1,0 +1,325 @@
+---
+title: "Data Science עם R - K Nearest Neighbors - KNN"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+בפרק זה נעסוק באלגוריתם KNN שמשמש לסיווג ולרגרסיה. 
+אלגוריתם זה פשוט יחסית להבנה ומהיר למימוש. הוא לא מתאים לסטטיסטיקה היסקית (אלא רק לחיזוי), והוא יכול להיות מאוד יעיל בבעיות בעלות מאפיינים מסוימים.
+
+הרעיון שבבסיס שיטת KNN הוא שכאשר מגיעה תצפית חדשה, וצריך להעריך משתנה מטרה שלה או לסווג אותה לקטגוריה מסוימת, אז בוחנים לאילו תצפיות קיימות היא "קרובה" ומניחים שהערך שלה יהיה הסיווג הנפוץ בקרב התצפיות הקרובות (או ברגרסיה, יהיה ממוצע של ערך משתנה המטרה של השכנים הקרובים).
+
+נמחיש את האלגוריתם באמצעות קובץ הנתונים של הפרחים iris:
+נניח שאנחנו רוצים לחזות סיווג של פרק מסוים למין שלו, על פי אורך ורוחב של עלי הכותרת שלו.
+
+כלומר, יש לנו נתונים על אורך ורוחב של עלי כותרת של שלושת המינים. בסה"כ 50 תצפיות מכל מין.
+
+כעת אנחנו מודדים שלושה פרחים חדשים (Length, Width):
+
+   * פרח א': (5,4)
+   * פרח ב': (7.5, 3.1)
+   * פרח ג': (6, 2.8)
+
+וצריכים לסווג תצפיות אלו לכל אחד מהמינים (setosa, versicolor, virginica)
+
+```{r iris species, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+iris %>% 
+  count(Species)
+
+new_observations <- tribble(
+  ~Sepal.Length, ~Sepal.Width, ~Species,
+  5, 4, "פרח א",
+  7.5, 3.1, "פרח ב",
+  6, 2.8, "פרח ג"
+)
+
+ggplot(iris, 
+       aes(x = Sepal.Length, y = Sepal.Width, color = Species)) + geom_point() + 
+  geom_point(data = new_observations, color = "black", size = 5, alpha = 0.7) + 
+  geom_label(inherit.aes = FALSE,
+             data = new_observations, 
+             aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 label = Species),
+             nudge_x=-0.3, show.legend = FALSE)
+
+```
+
+אינטואיטיבית אפשר לנחש שפרח א' שייך לסיווג setosa, פרח ב' שייך לסיווג virginica, ולגבי פרח ג' זה לא כל כך ברור (או virginica או versicolor). האינטואיציה עבדה כך שהיא התאימה לכל נקודה חדשה את הנקודות שמסביבתה, וכך בדיוק פועל KNN.
+
+למעשה באמצעות KNN ניתן לסווג כל אזור במרחב לאחד משלושת המינים. כל מה שצריך להחליט הוא על כמה נקודות להתבסס (וזה הפרמטר המרכזי של KNN - על כמה שכנים להתבסס). 
+
+   * ב-k=1 האלגוריתם מוצא את השכן הקרוב ביותר ומסווג את התצפית לפי ערך שכן זה.
+   * ב-k=3 האלגוריתם מחליט לגבי הסיווג לפי רוב.
+   * בשימוש ב knn לצורך רגרסיה (ערך רציף של משתנה מטרה), פשוט מתבצע חישוב ממוצע על השכנים הרלוונטיים.
+   * עבור k-ים זוגיים, תיקו נשבר באקראי.
+
+הקוד הבא ממחיש כיצד מפעילים את knn, כולל שימוש בtrain/test sets:
+
+```{r show area of iris knn}
+
+# Split iris into train/test randomly
+iris_split <- iris %>%
+  mutate(is_train = runif(nrow(iris)) <= 0.8)
+
+iris_train <- iris_split %>%
+  filter(is_train)
+
+iris_test <- iris_split %>%
+  filter(!is_train)
+
+# fit the KNN according to the train set
+
+iris_knn <- class::knn(train = iris_train %>% select(Sepal.Length, Sepal.Width) %>% as.matrix(), 
+                       test = iris_test %>% select(Sepal.Length, Sepal.Width) %>% as.matrix(), 
+                       cl = iris_train %>% select(Species) %>% as.matrix(),
+                       k = 1)
+
+iris_test %>% 
+  mutate(knn_class = iris_knn) %>%
+  group_by(knn_class, Species) %>%
+  tally() %>%
+  spread(key = Species, value = n, fill = 0)
+
+iris_test %>%
+  mutate(classification_error = iris_knn != Species) %>%
+  group_by(Species) %>%
+  summarize(Species_class_error = mean(classification_error))
+
+```
+
+***
+
+### שאלה למחשבה
+
+החישוב לעיל מציג את הטעות עבור ה-test set.
+מה תהיה הטעות עבור ה-train set במקרה של k=1?
+
+***
+
+כפי שצפוי, היכולת לסווג את המין setosa היא טובה, וב-test set הצלחנו לסווג את כל התצפיות נכונה.
+לעומת זאת, הסיווג של המינים versicolor ו-virginica הוא פחות מוצלח, קשה להפריד בין המינים הללו באמצעות שני המשתנים שהשתמשנו בהם.
+
+למעשה, בהתבסס על שיטת knn אפשר לצייר "רשת" של סיווגים - כל נקודה במרחב תסווג לקטגוריה מסוימת, לפי התצפיות הסמוכות אליה.
+
+```{r knn iris grid, fig.width=10}
+
+# generate a full grid:
+knn_grid <- expand.grid(Sepal.Length = seq(3, 8, 0.05), Sepal.Width = seq(2, 4.5, 0.05))
+
+# show the result
+head(knn_grid)
+tail(knn_grid)
+
+# Run the knn algorithm. Let's use the entire dataset.
+# k = 1
+iris_knn_1 <- class::knn(train = iris %>% select(Sepal.Length, Sepal.Width) %>% as.matrix(), 
+                         test = knn_grid, 
+                         cl = iris %>% select(Species) %>% as.matrix(),
+                         k = 1)
+# k = 2
+iris_knn_2 <- class::knn(train = iris %>% select(Sepal.Length, Sepal.Width) %>% as.matrix(), 
+                         test = knn_grid, 
+                         cl = iris %>% select(Species) %>% as.matrix(),
+                         k = 2)
+# k = 10
+iris_knn_10 <- class::knn(train = iris %>% select(Sepal.Length, Sepal.Width) %>% as.matrix(), 
+                          test = knn_grid, 
+                          cl = iris %>% select(Species) %>% as.matrix(),
+                          k = 10)
+
+# Now, I'm going to plot the resulting grids
+
+knn_for_chart <- knn_grid %>%
+  bind_cols(tibble(`1nn` = iris_knn_1, `2nn` = iris_knn_2, `10nn` = iris_knn_10)) %>%
+  gather(key = "k", value = "classification", -Sepal.Length, -Sepal.Width) %>%
+  mutate(k = as_factor(k, levels = c("1nn", "2nn", "10nn")))
+
+# to show you the data set I'm using to plot this after the gather operation
+glimpse(knn_for_chart)
+
+# the ggplot command
+ggplot(knn_for_chart, aes(x = Sepal.Length, y = Sepal.Width, fill = classification)) + 
+  geom_tile(alpha = 0.5) + 
+  facet_wrap(~ k) + 
+  geom_point(inherit.aes = F, data = iris, aes(x = Sepal.Length, y = Sepal.Width, fill = Species),
+             color = "black", pch = 21, size = 3)
+
+```
+```{r plot knn with aspect ratio 1, include=FALSE}
+
+
+# It's all about Euclidean distance. Look what happens when we make the axis symmetric
+ggplot(knn_for_chart, aes(x = Sepal.Length, y = Sepal.Width, fill = classification)) + 
+  geom_tile(alpha = 0.3) + 
+  facet_wrap(~ k) + 
+  geom_point(inherit.aes = F, data = iris, aes(x = Sepal.Length, y = Sepal.Width, fill = Species),
+             color = "black", pch = 21, size = 3) +
+  theme(aspect.ratio=1)
+
+```
+
+## החשיבות של Scaling and centering
+
+אחד מהכלים החשובים שיש להפעיל, לפני שמשתמשים באלגוריתם של knn הוא מרכוז ו/או התאמה של קנה המידה של הנתונים.
+
+חשבו על שני משתנים, שאחד נע בין 0-100 והשני נע בין 0-1. ההגדרה של "שכונה" מושפעת מאוד מהמרחקים הללו, כך שהמשתנה של 0-100 משפיע בצורה משמעותית הרבה יותר על מציאת השכנים הקרובים. לעיתים ביצוע מרכוז ו/או התאמת קנה המידה של הנתונים ישפר את החיזוי.
+
+### תרגיל - knn
+
+   1. בתרגיל זה ננסה לשפר את החיזוי שהדגמנו על iris, על ידי שימוש בכלל המשתנים שעומדים לרשותנו (יש עוד שני משתנים שלא השתמשנו בהם), ועל ידי התאמת הסקלות של המשתנים לתחום 0-1. תוכלו להיעזר בקוד ששימש אותנו בפרק זה ולהרחיב את המודל על בסיסו.
+      a. ראשית, בנו שני מבני נתונים על ידי פיצול הנתונים ל-train ו-test.
+      b. כעת, השתמשו בפונקצית `mutate` ובפונקציה `scale` כדי ליצור ארבעה משתנים חדשים (גם ב-train set וגם ב-test set), והתאימו מודל חדש המבוסס על משתנים אלו. חשבו את שגיאת הסיווג בכל אחד מהמינים. האם שינוי קנה המידה סייע בחיזוי?
+      c. כעת התאימו מודל לפי ה-train set, שכולל את ארבעת המשתנים המקוריים Sepal.length, Sepal.width, Petal.length, Petal.width.
+      d. חשבו את שגיאת הסיווג בכל אחד מהמינים. האם התוספת של המשתנים עזרה להקטין את שגיאת הסיווג של המינים?
+      e. באיזה ערך של k השתמשתם? מה היה קורה לשגיאת הסיווג אילו הייתם משתמשים בערך אחר?
+      
+```{r knn scaling and centering exercise, include=FALSE}
+
+# I have already built the train_iris and test_iris.
+# To remind ourselves, here are the original errors based only on Sepal length/width
+iris_test %>%
+  mutate(classification_error = iris_knn != Species) %>%
+  group_by(Species) %>%
+  summarize(Species_class_error = mean(classification_error))
+
+# Now using the scale function to scale and center:
+iris_train_scaled <- iris_train %>% 
+  mutate(Sepal.Length.scaled = scale(Sepal.Length),
+         Sepal.Width.scaled = scale(Sepal.Width))
+iris_test_scaled <- iris_test %>%
+  mutate(Sepal.Length.scaled = as.numeric(scale(Sepal.Length)),
+         Sepal.Width.scaled = as.numeric(scale(Sepal.Width)))
+
+# Rerun the knn and check the accuracy
+iris_knn_scaled <- class::knn(train = iris_train_scaled %>% 
+                                select(ends_with("scaled")) %>% as.matrix(),
+                              test = iris_test_scaled %>% 
+                                  select(ends_with("scaled")) %>% as.matrix(),
+                              cl = iris_train_scaled %>% select(Species) %>% as.matrix(),
+                              k = 1)
+iris_test_scaled %>% 
+  mutate(classification_error = Species != iris_knn_scaled) %>%
+  group_by(Species) %>%
+  summarize(Species_class_error = mean(classification_error))
+
+
+# Now using all variables, with k=1
+iris_knn_all_vars <- class::knn(train = iris_train %>% 
+                                  select(ends_with("Length"), ends_with("Width")) %>% as.matrix(),
+                                test = iris_test %>% 
+                                  select(ends_with("Length"), ends_with("Width")) %>% as.matrix(), 
+                                cl = iris_train %>% select(Species) %>% as.matrix(),
+                                k = 1)
+iris_test %>%
+  mutate(classification_error = iris_knn_all_vars != Species) %>%
+  group_by(Species) %>%
+  summarize(Species_class_error = mean(classification_error))
+
+# The same thing with k=5
+iris_knn_all_vars2 <- class::knn(train = iris_train %>% 
+                                  select(ends_with("Length"), ends_with("Width")) %>% as.matrix(),
+                                test = iris_test %>% 
+                                  select(ends_with("Length"), ends_with("Width")) %>% as.matrix(), 
+                                cl = iris_train %>% select(Species) %>% as.matrix(),
+                                k = 5)
+iris_test %>%
+  mutate(classification_error = iris_knn_all_vars2 != Species) %>%
+  group_by(Species) %>%
+  summarize(Species_class_error = mean(classification_error))
+
+
+```
+
+   2. טענו את קובץ "Medical_Appointments_No_Shows_KaggleV2-May-2016.csv". חלקו את הקובץ לשני חלקים train ו-test (ביחס של 20/80), ונסו להפיק חיזוי של אי-הופעה לפגישה עם רופא באמצעות knn.
+      a. באילו משתנים כדאי להשתמש?
+      b. אילו המרות צריך לבצע על המשתנים?
+      c. בדקו מספר ערכים שונים של k, במה מומלץ להשתמש?
+      d. חשבו את שגיאת הסיווג שלכם לפי:
+         1. טעות מסוג ראשון: מטופלים שחזיתם שיגיעו אך לא הגיעו
+         2. טעות מסוג שני: מטופלים שחזיתם שלא יגיעו אך בעצם הגיעו
+         3. מה המשמעות של כל סוג שגיאה?
+      e. האם התוצאות שלכם טובות?
+      f. כמה זמן לקח להריץ את האלגוריתם? האם הרבה או מעט? למה לדעתכם?
+
+```{r medical appointment no shows knn analysis, include=FALSE}
+
+# load the knn
+library(FNN)
+
+# Load the file from the csv
+appointments_raw <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv")
+appointments <- appointments_raw %>%
+  mutate(is_train = runif(nrow(appointments_raw)) <= 0.8) %>%
+  mutate(schedule_time = lubridate::hour(ScheduledDay)) %>%
+  mutate(same_day_appointment = (abs(ScheduledDay - AppointmentDay) <= 24)*1) %>%
+  mutate(is_male = (Gender == "M")*1) %>%
+  mutate_at(.vars = vars("schedule_time", "Age"), funs((. - min(.))/(max(.)-min(.)))) %>%
+  select(schedule_time, same_day_appointment, is_male,
+         Age, Scholarship:SMS_received, `No-show`, is_train)
+
+create_knn_estimation <- function(vars_to_omit = "null", try_k = 1){
+  test_res <- knn(train = appointments %>% 
+                    filter(is_train) %>%
+                    select(-`No-show`, -is_train) %>%
+                    select(-one_of(vars_to_omit)) %>%
+                    as.matrix(),
+                  test = appointments %>% 
+                    filter(!is_train) %>%
+                    select(-`No-show`, -is_train) %>%
+                    select(-one_of(vars_to_omit)) %>%
+                    as.matrix(),
+                  cl = appointments %>%
+                    filter(is_train) %>%
+                    select(`No-show`) %>%
+                    as.matrix(),
+                  k = try_k)
+
+  # Check for classification errors
+  confusion <- tibble(knn_result = as.character(test_res), 
+                      real_result = appointments$`No-show`[!appointments$is_train]) %>%
+    group_by(real_result) %>%
+    count(knn_result) %>%
+    mutate(prop = n/sum(n)) %>%
+    select(-n) %>%
+    spread(key = knn_result, value = prop)
+  
+  return(confusion)
+
+} 
+
+confuse1 <- create_knn_estimation()
+confuse2 <- create_knn_estimation(try_k = 3)
+confuse3 <- create_knn_estimation(try_k = 7)
+confuse4 <- create_knn_estimation(try_k = 1, vars_to_omit = "Age")
+confuse5 <- create_knn_estimation(try_k = 1, vars_to_omit = c("Age", "same_day_appointment"))
+confuse6 <- create_knn_estimation(try_k = 1, vars_to_omit = c("same_day_appointment"))
+confuse7 <- create_knn_estimation(try_k = 1, vars_to_omit = c("Age", "is_male"))
+
+confuse1
+confuse2
+confuse3
+confuse4
+confuse5
+confuse6
+confuse7
+
+```
+
+לעיתים כדי להגיע למודל טוב נדרש הרבה ניסוי וטעיה, ולפעמים גם מחשבה מחוץ לקופסה (לגבי איך להמיר משתנים שונים).
+
+למודל ה-knn ישנן מספר בעיות:
+
+   * החישוב אינו יעיל - כדי לחזות צריך לחשב מרחק של תצפית מהרבה נקודות.
+   * האלגוריתם פועל כקופסה שחורה - לא ניתן להפיק ממנו תובנות רבות (במסגרת סטטיסטיקה היסקית)
+
+## בפרק הבא
+
+בפרק הבא נדון במודלים של רגרסיה - מודלים שונים במהותם ממודל ה-knn, פשוטים יחסית, אך יעילים להפליא.
