@@ -1,0 +1,46 @@
+---
+title: "Data Science עם R - Linear and Logistic Regression"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+בפרק הקודם הזכרנו שבחיזוי סטטיסטי אנחנו מחפשים את הפונקציה $f$ שמביאה לתוצאת החיזוי הטובה ביותר:
+
+\[Y=f(X)+\epsilon\]
+
+רגרסיה לינארית היא שיטה סטטיסטית המניחה מבנה פשטני מאוד, אך שימושי להפליא. גם אם רוב התופעות הנצפות אינן "לינאריות", בהרבה מהמקרים המעשיים רגרסיה לינארית תביא תוצאות טובות, או לפחות תעזור לנו לחפש בכיוונים טובים, ולהבין אילו משתנים משפיעים על משתנה המטרה שלנו ובאיזה כיוון.
+
+מודל הרגרסיה הלינארית מניח שהפונקציה $f$ היא לינארית, כלומר:
+
+\[Y = \beta_0 + \beta_1x_1+\ldots+\beta_px_p\ + \epsilon\]
+
+כדי לחשב את המקדמים $\{\beta_i\}_{i=0}^p$, אנחנו פותרים בעיית מינימום - המקדמים שמביאים את השגיאה הריבועית למינימום.
+
+```{r linear regression explanation, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+iris_setosa <- iris %>%
+  filter(Species == "setosa") %>%
+  mutate(Sepal.Length = jitter(Sepal.Length))
+
+setosa_lm = lm(data = iris_setosa,
+               formula = Sepal.Width ~ Sepal.Length)
+
+iris_lm_errors <- iris_setosa %>%
+  mutate(Sepal.Width.pred = predict(setosa_lm, 
+                                    newdata = iris %>% 
+                                      filter(Species == "setosa")))
+
+ggplot(iris_lm_errors, 
+       aes(x=Sepal.Length, y=Sepal.Width)) + 
+  geom_point() + stat_smooth(method = "lm", se = FALSE) + 
+  geom_segment(aes(x = Sepal.Length, xend = Sepal.Length, y = Sepal.Width, yend = Sepal.Width.pred))
+
+```
+
+פתרון הרגרסיה הלינארית מביא לקו רגרסיה הממזער את המרחקים שבין הנקודות (התצפיות) לבינו (ריבועי המרחקים שבתרשים).
