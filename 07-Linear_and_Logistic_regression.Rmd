@@ -165,12 +165,46 @@ ggplot(iris_setosa_outlier, aes(x = Sepal.Length, y = Sepal.Width)) +
 
    * בדקו: האם ישנם נתונים "חריגים" שיש להוציא מהניתוח? נניח רמות שכר קיצוניות גבוהות או נמוכות. האם יש עובדים שצריך להחריג?
    * באילו משתנים אתם הולכים להשתמש? איזה משתנים רציפים, איזה משתנים הם פקטורים?
-   * האם ישנם משתנים שנדרש לבצע עליהם טרנספורמציה ולהמיר אותם לפורמט אחר?
+   * * האם ישנם משתנים שנדרש לבצע עליהם טרנספורמציה ולהמיר אותם לפורמט אחר?
+   * האם נדרשת עבודת הכנה על משתנים מסוג character? אתם יכולים להיעזר בקובץ [שבקישור](https://www.rstudio.com/resources/cheatsheets/#stringr)
+   * לעבודה על משתנים מסוג תאריך ניתן להיעזר בקובץ [שבקישור הזה](https://www.rstudio.com/resources/cheatsheets/#lubridate)
    * האם ישנם ערכים כפולים או לא מדוייקים למשתנים מסוימים? (לדוגמה אותיות קטנות/גדולות)
    * כיצד תתייחסו למשתנה "שנה פיסקלית"?
    * חשוב! לפני בניית המודל השתמשו בחלוקה ל-Train/Test כדי שתוכלו לבדוק את מידת הדיוק שלכם על ה-Test set. באיזה מדד תשתמשו כדי לבדוק את רמת הדיוק?
+   * כדי לחשב ערכי משכורת על ה-Test set, השתמשו בפונקציית `predict`
 
+```
+predict(linear_model, newdata,...)
 
+```
+
+```{r regression exercise NYC payroll, include=FALSE}
+
+library(lubridate)
+
+payroll_raw <- read_csv("data-files/NYC_payroll_sample.csv")
+payroll_sample <- payroll_raw %>%
+  mutate(tenure = 
+           `Fiscal Year` - year(as_date(x = `Agency Start Date`, format = "%m/%d/%Y", tz = "EST"))) %>% 
+  filter(`Pay Basis` == "per Annum") %>% 
+  mutate(is_train = runif(n = length(seq_along(`Fiscal Year`))) <= 0.8)
+
+payroll_lm <- lm(data = payroll_sample %>% filter(is_train),
+                 formula = `Base Salary` ~ tenure + `Fiscal Year`)
+
+payroll_predict <- predict(payroll_lm, newdata = payroll_sample %>% filter(!is_train))
+
+# plot errors as a function of wage level
+payroll_test <- payroll_sample %>%
+  filter(!is_train) %>%
+  mutate(prediction = payroll_predict)
+
+ggplot(payroll_test, aes(x = `Base Salary`, y = abs(`Base Salary` - prediction))) + geom_point()
+
+rmse <- payroll_test %>%
+  mutate(sq_err = (`Base Salary` - prediction)) %>%
+  summarise(sum(sq_err, na.rm = T))
+```
 
 ***
 
