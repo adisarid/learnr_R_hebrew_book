@@ -100,21 +100,81 @@ summary(iris_lm_complete)
 ### הכללות למודל לא לינארי
 
 בפונקציה `lm` ניתן להכניס יחסית בקלות הכללות למודל הלינארי, על ידי שינוי מתאים במשתנים. לדוגמה, הפקודה הבאה תכניס משתנים חדשים עם יחסים של מכפלות או ריבוע. עם זאת יש להיזהר מ"קללת המימד" עליה הסברנו בפרק קודם.
-בדוגמה הבאה הכנסנו גם את משתנה הפקטור Species, את האינטראקציה בין אורך ורוחב של עלי כותרת, ו
+בדוגמה הבאה הכנסנו גם את משתנה הפקטור Species, את האינטראקציה בין אורך ורוחב של עלי כותרת, ואת האורך של העלים בריבוע.
 
 ```{r non-linear regression}
 
-iris_nonlm = lm(data = iris %>% mutate(sqaured.Length = Sepal.Length^2),
-                  formula = Sepal.Width ~ Sepal.Length + Petal.Length + Petal.Width + sqaured.Length + Petal.Length*Petal.Width + factor(Species)) + 
-  coord_cartesian()
-
+iris_nonlm <- lm(data = iris %>% mutate(sqaured.Length = Sepal.Length^2),
+                 formula = 
+                   Sepal.Width ~ 
+                   Sepal.Length + Petal.Length + Petal.Width + 
+                   sqaured.Length + Petal.Length*Petal.Width + 
+                   factor(Species))
 summary(iris_nonlm)
 
 ```
 
+***
+
+### תרגיל (שהוא גם תחרות)
+
+בתרגיל זה תתאימו מודל לחיזוי מחירם של יהלומים.
+
+   1. מאגר הנתונים diamonds נטען אוטומטית ב-R. הציצו בנתונים ובהסבר עליהם.
+```{r glimpse mtcars}
+
+glimpse(diamonds)
+# Use ?diamonds to see the documentation of the database
+# or click F1 on diamonds
+
+# Set a consistent test set among the groups - USE THIS SET AS A TRAIN SET OF 80%
+train_set_idx <- round(seq(1, NROW(diamonds), length.out = (NROW(diamonds)*0.8)))
+
+```
+
+   2. חלקו את הנתונים באמצעות הוקטור train_set_idx לסט אימון וסט בחינה.
+   3. בנו את המודל הטוב ביותר שאתם יכולים על ה-train set. השתדלו לבנות את המודל הטוב ביותר עם מספר המשתנים הקטן ביותר האפשרי. אתם יכולים להשוות בין מודלים על ידי הסתכלות על רמת המובהקות של המשתנים, ועל ה-R^2 של המודלים.
+   4. לאחר שבחרתם מודל, בדקו את ממוצע ריבועי השגיאות על ה-test set.
+      a. כדי לבדוק את סכום ריבוע השגיאות, השתמשו בפונקציה `predict` באופן הבא:
+```
+predict(linear_model, newdata,...)
+
+```
+      b. כדי לחשב את ממוצע ריבועי השגיאות השתמשו ב-mutate כדי לחשב את הוקטור הבא  (price-predicted_price)^2, ואז חשבו ממוצע ערכי הוקטור שקיבלתם.
+   5. הקבוצה המנצחת היא זו שהגיעה לשגיאה הנמוכה ביותר.
+
+
+```{r diamonds stepwise regression, include=FALSE}
+
+lm_full_diamonds <- lm(data = diamonds[train_set_idx,],
+              formula = paste0("price ~ ", paste(names(diamonds)[c(1:6, 8:10)], collapse = " + ")))
+summary(lm_full_diamonds)
+
+step_wise_model_diamonds <- MASS::stepAIC(lm_full_diamonds, direction = "backward", trace = TRUE)
+summary(step_wise_model_diamonds)
+
+diamonds_predictions <- predict(step_wise_model_diamonds,
+                                newdata = diamonds %>%
+                                  filter(!(seq_along(price) %in% train_set_idx)))
+
+(mean((diamonds_predictions - diamonds$price[-train_set_idx])^2))
+
+
+```
+
+
+***
+
 ### בחירות משתנים
 
-בפרקי המשך נחזור לרגרסיה הלינארית ונדון בבחירת משתנים ובצמצום מימדים (Variable selection, dimension reduction).
+בפרקי המשך נחזור לרגרסיה הלינארית ונדון בבחירת משתנים ובצמצום מימדים (Variable selection, dimension reduction). כעת בקצרה נמחיש פקודה העוזרת לצמצם את מודל הרגרסיה למשתנים המשמעותיים ביותר:
+
+```{r stepwise}
+
+step_wise_model <- MASS::stepAIC(iris_nonlm, direction = "both", trace = TRUE)
+summary(step_wise_model)
+
+```
 
 ### חולשות הרגרסיה הלינארית
 
@@ -173,10 +233,7 @@ ggplot(iris_setosa_outlier, aes(x = Sepal.Length, y = Sepal.Width)) +
    * חשוב! לפני בניית המודל השתמשו בחלוקה ל-Train/Test כדי שתוכלו לבדוק את מידת הדיוק שלכם על ה-Test set. באיזה מדד תשתמשו כדי לבדוק את רמת הדיוק?
    * כדי לחשב ערכי משכורת על ה-Test set, השתמשו בפונקציית `predict`
 
-```
-predict(linear_model, newdata,...)
 
-```
 
 ```{r regression exercise NYC payroll, include=FALSE}
 
