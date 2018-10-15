@@ -44,3 +44,114 @@ ggplot(iris_lm_errors,
 ```
 
 פתרון הרגרסיה הלינארית מביא לקו רגרסיה הממזער את המרחקים שבין הנקודות (התצפיות) לבינו (ריבועי המרחקים שבתרשים).
+
+כל מודל רגרסיה מכיל סיכום כך לדוגמה מודל רגרסיה מורכב יותר עבור אותה בעיה (רק המכיל את כל המשתנים) יראה כך:
+
+```{r iris more complex lm}
+
+iris_lm_complete <- lm(data = iris, 
+                       formula = Sepal.Width ~ Sepal.Length + Petal.Width + Petal.Length)
+
+summary(iris_lm_complete)
+  
+```
+
+שימו לב לשימוש בפרמטר formula שבפקודה `lm`. פרמטר זה מתאר את המודל לפיו הפקודה צריכה לבנות את הרגרסיה.
+התוצר של הפקודה `summary` מפרט את המודל, בעמודה estimate ניתן לראות את המקדמים למשתנים. עמודה Std error מציגה את סטיית התקן, ושתי העמודות האחרונות מתייחסות למבחן סטטיסטי לגבי המקדם הרלוונטי (האם המקדם שונה מ-0 באופן מובהק סטטיסטי). הכוכביות שבימין כל שורה מציגות את רמת המובהקות על פי מדרגות. במדעי החברה מקובל להתייחס לרמות מובהקות מתחת ל-0.05 כמשמעותיות. המודל בדוגמה יתורגם כך:
+
+\[\text{Sepal.Width} \approx 1.04 + 0.61\cdot\text{Sepal.Length} + 0.56\cdot\text{Petal.Width} -0.58\cdot\text{Petal.Length}\]
+
+בתחתית הדיווח מופיע המדד Multiple R-squared ו-Adjusted R-sqaured. שניהם מדדים הנוגעים לטיב הרגרסיה. אלו מדדים שנעים בין 0-1, וכאשר הם קרובים ל-1 המשמעות היא שהרגרסיה מצליחה להסביר חלק משמעותי מהשונות שבמשתנה התלוי.
+
+מדד נוסף למידת הדיוק של הרגרסיה הוא ה-RSE (או Residual standard error), שגם הוא נמצא בתחתית סיכום מודל הרגרסיה. ה-RSE מחושב על ידי הנוסחה הבאה:
+
+\[\text{RSE} = \sqrt{\frac{\text{RSS}}{n-2}} = \sqrt{\frac{1}{n-2}\sum_{i=1}^n\left(y_i-\hat{y}_i\right)^2}\]
+
+הנוסחה עבור $R^2$ נתונה על ידי:
+
+\[R^2 = 1 - \frac{\sum_{i=1}^n\left(y_i-\hat{y}_i\right)^2}{\sum_{i=1}^n\left(y_i-\bar{y}_i\right)^2} = 1 - \frac{\text{RSS}}{\text{TSS}}\]
+
+לא ניכנס לעומק התיאוריה של מודל הרגרסיה הלינארית, אך לקורא המעוניין ניתן להעמיק בספר הבא (פרק 3):
+
+<div style="direction:ltr; text-align:left;">Gareth J., Witten D., Hastie T., and Tibshirani R., An Introduction to Statistical Learning with Applications in R, <i>Springer</i>, 7th printing, 2017. Online access: <a href="http://www.statlearning.com">www.statlearning.com</a>, (feteched October 2018).</div>
+
+במישור המעשי, מודל של רגרסיה לינארית מתאים כדי לחזות משתנה מטרה רציף (שמקבל ערכים בטווח ערכים מסוים), אך במקרים מסוימים עשוי להתאים גם לבעיות סיווג או למשתנה מטרה אורדינלי (בדיד עם סט ערכים סופי שיש ביניהם יחס סדר).
+
+### משתנים קטגוריים ברגרסיה
+
+בדוגמה לעיל עסקנו במשתנים רציפים בלבד. אך לעיתים ישנם משתנים קטגוריאליים שאנו רוצים להשתמש בהם במסגרת מודל החיזוי, למשל השפעת מגדר על גובה ההכנסה. מגדר הוא משתנה המקבל אחת משתי קטגוריות. כיצד ניתן להשתמש בו במודל רגרסיה?
+
+במודל הרגרסיה הוא יבוא לידי ביטוי כתוספת בעבור ערך מסוים.
+
+\[\text{Salary} = \beta_0 + \beta_{\text{f}}\cdot X_{\text{female}}\]
+
+אם התצפית מתייחסת לנקבה אז ערך המשכורת ישתנה בתוספת של $\beta_{\text{f}}$. הרמה הנומינלית תהיה (עבור גברים) $\beta_0$.
+
+***
+
+#### שאלה למחשבה
+
+   1. איך נטפל במשתנה שיש לו כמה ערכים בדידים?
+      a. משתנה אורדינלי (לדוגמה רמת שכר)
+      b. משתנה פקטור (לדוגמה מצב משפחתי)
+
+***
+
+### הכללות למודל לא לינארי
+
+בפונקציה `lm` ניתן להכניס יחסית בקלות הכללות למודל הלינארי, על ידי שינוי מתאים במשתנים. לדוגמה, הפקודה הבאה תכניס משתנים חדשים עם יחסים של מכפלות או ריבוע. עם זאת יש להיזהר מ"קללת המימד" עליה הסברנו בפרק קודם.
+בדוגמה הבאה הכנסנו גם את משתנה הפקטור Species, את האינטראקציה בין אורך ורוחב של עלי כותרת, ו
+
+```{r non-linear regression}
+
+iris_nonlm = lm(data = iris %>% mutate(sqaured.Length = Sepal.Length^2),
+                  formula = Sepal.Width ~ Sepal.Length + Petal.Length + Petal.Width + sqaured.Length + Petal.Length*Petal.Width + factor(Species)) + 
+  coord_cartesian()
+
+summary(iris_nonlm)
+
+```
+
+### בחירות משתנים
+
+בפרקי המשך נחזור לרגרסיה הלינארית ונדון בבחירת משתנים ובצמצום מימדים (Variable selection, dimension reduction).
+
+### חולשות הרגרסיה הלינארית
+
+לרגרסיה הלינארית ישנן מספר חולשות שכדאי להיות מודעים אליהם:
+   
+   * הנחה פשטנית למדי של לינאריות הנתונים.
+   * הנחת שונות קבועה (הטרוסקדסטיות) - השונות של השגיאה הסטטיסטית קבועה בין רמות שונות של המשתנים המסבירים
+   * קורלציה בין משתנים מסבירים תגרום לתופעות לא רצויות
+   * מושפעת מאוד מערכי קיצון. למשל, ניקח את הנתונים של iris_setosa ונוסיף להם ערך יחיד אבל קיצוני במיוחד.
+   
+```{r illustration of outliers}
+
+iris_setosa_outlier <- iris_setosa %>%
+  add_row(Sepal.Length = 5.1, Sepal.Width = 35, Petal.Length = 1.4, Petal.Width = 0.2, Species = "setosa")
+
+ggplot(iris_setosa_outlier, aes(x = Sepal.Length, y = Sepal.Width)) + 
+  geom_point() + stat_smooth(method = "lm", se = FALSE,
+                             linetype = "dashed") + 
+  stat_smooth(inherit.aes = FALSE,
+              method = "lm", 
+              data = iris_setosa, aes(x = Sepal.Length, y = Sepal.Width), 
+              se = FALSE) + 
+  coord_cartesian(ylim = c(2, 4.5)) + 
+  ggtitle("The influence of a single outlier on the regression model\nChart is zoomed-in, i.e., the outlier (5.1, 35) is not visible in the chart")
+
+```
+
+הוספה של תצפית אחת חריגה (5.1, 35) "זרקה" את מודל הרגרסיה בצורה קיצונית. לכן, לפני הרצת מודל רגרסיה (ובאופן כללי מודלים של חיזוי) מומלץ לבדוק ערכים חסרים ולטפל בהם או להחריג אותם מהניתוח.
+
+## הקשר שבין רגרסיה לינארית לבין KNN
+
+בפרק הקודם עסקנו באלגוריתם KNN. המחשנו את השימוש ב-KNN לצורך בעיות סיווג, אך ניתן להפעיל אותו גם לצורך חיזוי משתנים רציפים, מעין "רגרסיה מבוססת שכנים" כאשר הערך שינתן לתצפית חדשה יבוסס על הערך הממוצע של השכנים שלה.
+
+\[\hat{y}_X=\sum_{i\in\mathcal{N}_k(X)}y_i\]
+
+***
+
+### תרגיל - רגרסיה לינארית
+
+***
