@@ -134,14 +134,18 @@ train_set_idx <- round(seq(1, NROW(diamonds), length.out = (NROW(diamonds)*0.8))
 
    2. חלקו את הנתונים באמצעות הוקטור train_set_idx לסט אימון וסט בחינה.
    3. בנו את המודל הטוב ביותר שאתם יכולים על ה-train set. השתדלו לבנות את המודל הטוב ביותר עם מספר המשתנים הקטן ביותר האפשרי. אתם יכולים להשוות בין מודלים על ידי הסתכלות על רמת המובהקות של המשתנים, ועל ה-R^2 של המודלים.
-   4. לאחר שבחרתם מודל, בדקו את ממוצע ריבועי השגיאות על ה-test set.
+   4. חשבו, האם יש מקום לפצל את העבודה למספר מודלי רגרסיה לפי משתנים מסוימים?
+   5. לאחר שבחרתם מודל או מודלים, בדקו את ממוצע ריבועי השגיאות על ה-test set.
       a. כדי לבדוק את סכום ריבוע השגיאות, השתמשו בפונקציה `predict` באופן הבא:
+      
 ```
 predict(linear_model, newdata,...)
 
 ```
-      b. כדי לחשב את ממוצע ריבועי השגיאות השתמשו ב-mutate כדי לחשב את הוקטור הבא  (price-predicted_price)^2, ואז חשבו ממוצע ערכי הוקטור שקיבלתם.
-   5. הקבוצה המנצחת היא זו שהגיעה לשגיאה הנמוכה ביותר.
+
+   6. כדי לחשב את ממוצע ריבועי השגיאות השתמשו ב-mutate כדי לחשב את הוקטור הבא  (price-predicted_price)^2, ואז חשבו ממוצע ערכי הוקטור שקיבלתם.
+
+הקבוצה המנצחת היא זו שהגיעה לשגיאה הנמוכה ביותר.
 
 
 ```{r diamonds stepwise regression, include=FALSE}
@@ -155,10 +159,26 @@ summary(step_wise_model_diamonds)
 
 diamonds_predictions <- predict(step_wise_model_diamonds,
                                 newdata = diamonds %>%
-                                  filter(!(seq_along(price) %in% train_set_idx)))
+                                  filter(!(seq_along(price) %in% train_set_idx))) %>%
+  tibble(price_prediction = .) %>%
+  bind_cols(price = diamonds$price[-train_set_idx])
 
-(mean((diamonds_predictions - diamonds$price[-train_set_idx])^2))
+# RMSE
+sqrt(mean((diamonds_predictions$price-diamonds_predictions$price_prediction)^2))
 
+# MAE
+mean(abs(diamonds_predictions$price-diamonds_predictions$price_prediction))
+
+# ME
+mean((diamonds_predictions$price-diamonds_predictions$price_prediction))
+
+# The distribution of errors: see if the error is uniform as a function of price.
+# Can you spot a bias? Would you say the model perform well?
+ggplot(diamonds_predictions, aes(x = price, y = (price_prediction - price))) + geom_point()
+
+diamonds_predictions %>% 
+  gather(type_price, value) %>%
+  ggplot(data = ., aes(value, x = type_price)) + geom_boxplot()
 
 ```
 
@@ -167,12 +187,40 @@ diamonds_predictions <- predict(step_wise_model_diamonds,
 
 ### בחירות משתנים
 
-בפרקי המשך נחזור לרגרסיה הלינארית ונדון בבחירת משתנים ובצמצום מימדים (Variable selection, dimension reduction). כעת בקצרה נמחיש פקודה העוזרת לצמצם את מודל הרגרסיה למשתנים המשמעותיים ביותר:
+חלק חשוב בבניית מודלים (ולמעשה אף בהכנת ה-data לפני בניית המודלים), הוא צמצום מימדים, ובחירת משתנים (Variable selection, dimension reduction). באמצעות תהליך "צעדים" ניתן להנחות את המחשב לבחור רגרסיה המכילה תת-קבוצה של המשתנים. נמחיש פקודה העוזרת לצמצם את מודל הרגרסיה למשתנים המשמעותיים ביותר:
 
 ```{r stepwise}
 
 step_wise_model <- MASS::stepAIC(iris_nonlm, direction = "both", trace = TRUE)
 summary(step_wise_model)
+
+```
+
+דרך נוספת לצמצם מימדים (כאשר מדובר במשתנים רציפים) היא באמצעות ניתוח גורמים עיקריים Principle Component Analysis. ככלל, לפני שאנחנו מתאימים מודל, נרצה לוודא שהמשתנים אינם בעלי קורלציה אחד לשני (כדי לא להכניס משתנים מיותרים, וכדי לא ליצור אפקטים מטעים במודלים). האלגוריתם של PCA מחלץ מהנתונים "וקטורים" לפי סדר יורד שבו בכל וקטור השונות היא "הגבוהה ביותר האפשרית".
+
+כך הנתונים מתפרקים לגורמים המסבירים את השונות, וניתן לבחור תת קבוצה של וקטורים. החיסרון הוא שלא תמיד הפירוק ניתן להסבר בצורה מיידית.
+
+```{r pca example, message=FALSE}
+
+no_show_appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>% 
+  select(Age, Scholarship:SMS_received) %>%
+  mutate(is_train = runif(NROW(Age)) <= 0.8)
+
+
+
+pca1 <- prcomp(no_show_appointments %>% select(-Age) %>% filter(is_train))
+pca1
+summary(pca1)
+
+# to retreive the variables use
+pca1_use <- predict(pca1, newdata = no_show_appointments %>% select(-Age) %>% filter(!is_train))
+glimpse(pca1_use)
+# now you can continue to work with pca1_use as your data set
+
+# If you add age, you will see that it becomes the most significant element (PC1)
+pca_with_age <- prcomp(no_show_appointments)
+pca_with_age
+summary(pca_with_age)
 
 ```
 
