@@ -1,0 +1,255 @@
+---
+title: "Data Science עם R - חזרה עד כה ותרגולים"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+ביחידה זו נעשה תרגול וחיזוק של היסודות, ועד לנושאים האחרונים שנלמדו ביחידות הקודמות.
+
+## כל זמן הוא "זמן טוב" לטיפים וטריקים - קיצורי דרך שיחסכו לכם הרבה מאמץ ב-RStudio
+
+### עזרה על פקודות
+טעינת חלונית העזרה - פשוט עומדים על פקודה ולוחצים F1. הפקודה הרלוונטית תעלה בצד ימין למטה. לחילופין, הקלדה של הקוד הבא בקונסול:
+
+```
+?mean # <- if you are sure in the exact name
+?mutate_all
+??mutate_all # <- for part of a name or unloaded library, you will get a list of matching options
+```
+
+### הרצת קוד מהירה
+
+כדי להריץ שורות קוד, אין צורך לסמן את כל השורות. אפשר פשוט לעמוד על השורה הראשונה וללחוץ ctrl+Enter.
+R יריץ את השורה הראשונה, יציג לכם את התוצאה או אזהרות, וידלג אוטומטית לשורה הבאה (עליה שוב אפשר ללחוץ ctrl+Enter).
+
+### ניקוי חלון ה-Console
+
+פשוט עמדו בחלון הקונסול ולחצו ctrl+L
+
+### פתיחת אובייקט לצפייה מיידית
+
+תוך כדי לחיצה על ctrl לחצו על האובייקט המבוקש. הוא יפתח בחלון ב-RStudio. רק השתדלו להימנע מאובייקטים גדולים מדי (ייקח להם המון זמן להיטען או שהם יתקעו את RStudio).
+
+### "טיול בהיסטוריה"
+
+על ידי לחיצה בקונסול על ctrl+חץ למעלה, ניתן לעיין בפקודות אחרונות שהורצו. אם תתחילו לרשום פקודה אז הסטוריה זו תקבל פילטר לפי האותיות שהזנתם.
+
+### קפיצה בין טאבים (scripts and datasets)
+
+פשוט לחצו על ctrl + tab כאשר אתם עומדים על חלונית הסקריפט, או על ctrl + shift + tab
+
+### חלוניות שכדאי לשים לב אליהם
+
+   * חלונית ה-Environment עוזרת להתמצא במשתנים שטענתם.
+   * כפתור ה-Import Dataset - יעזור לכם לטעון קבצים, למי שלא רוצה לעשות שימוש בקוד. היתרון הגדול של כפתור זה הוא שניתן לראות את הנתונים וגם לבחור איך לייבא כל עמודה.
+   * מי שעובד עם version tracking - יופיע לו Git. שימושי למי שמכיר...
+   * חלונית ה-Connections - תעזור לכם להתחבר לנתונים בפורמטים שונים, וניגע בזה בהמשך.
+   
+### תיעוד קוד "כמו שצריך"
+
+כפי שבטח שמתם לב כבר, התו # משמש לכתיבת הערות. אפשר לשים אותו בתחילת שורה או אחרי פקודה בסיומה של שורה.
+
+אבל מה קורה כשמכניסים את השורה הבאה:
+
+```
+# ==== This is a section header within a script! ====
+
+# ==== Also cool, but you get my drift ====
+
+```
+
+## עכשיו לחיזוק וחזרה על הבסיס
+
+### סוגי אובייקטים
+
+הרבה מהדוגמאות שלנו עובדות עם datasets קיימים, או עם datasets שהורדתי מ-Kaggle.
+בסיסי נתונים קיימים בעצם נטענים אוטומטית עם R. כמו: iris, diamonds, mtcars.
+בסיסי נתונים אחרים ניתן לטעון עם פקודות קריאה כמו `read_csv` או `readxl::read_excel` או כפי שהראיתי כרגע, על ידי לחיצה על Import Dataset בחלונית ה-Environment.
+
+### טענתם Dataset? צעד ראשון להציץ בו!
+
+כדי להציץ בDataset בצעו את אחד מהדברים הבאים:
+```{r get a better sense of a dataset, warning=FALSE, messages=FALSE}
+
+# load the dataset however you want, and then use (one of the above or a combination of:)
+summary(iris)
+#View(iris) # can also be accomplished by ctrl+left mouse click on name
+names(iris)
+typeof(iris) # what is the type of iris?
+typeof(iris$Species) # what is the type of column (variable) Species
+iris # usually this doesn't provide a very nice view...
+dim(iris)
+
+# these are all base-R functions, but another recommended one is
+library(dplyr) # <- load the dplyr library where glimpse is defined
+glimpse(iris)
+
+```
+
+### ויז'ואליזציה
+
+על ויז'ואליזציה כבר דיברנו הרבה. היא בין הדברים הראשונים שתעשו כדי ללמוד את ה-Dataset. אבל לא נרחיב עליה פה יותר. מומלץ לעבוד עם החבילה `ggplot2`.
+
+### חזרה "ליסודות+"
+
+דיברנו הרבה על קריאת קבצים, ועבודה עם Datasets, אבל דילגנו על כמה דברים "פשוטים יותר". ההיכרות עמם תעזור לכם בהמשך במגוון היבטים - למידה של מודלים חדשים, ותכנות מתקדם יותר ב-R.
+
+העבודה ב-R היא וקטורית בעיקרה, זאת אומרת שהרבה מהפונקציות מקבלות וקטור ומחזירות ערך. כך לדוגמה `mean`, `max`, `sd`, וכו'. יש גם פונקציות שמחזירות וקטור כמו `range` או `runif`.
+
+תמיד אפשר לפנות לוקטור מסוים בתוך מטריצה על ידי שימוש בסימן `$` או על ידי הפנייה עם סוגריים מרובעים.
+
+```{r call specific segments and vector operations}
+
+iris$Sepal.Length # loads just the vector Sepal.Length
+mean(iris$Sepal.Length) # provides the mean of Sepal.Length
+range(iris$Sepal.Length) # the minimum and maximum (vector result with two numbers)
+mean(iris[,1]) # call Sepal.Length by location (it is the first column) and then compute mean
+
+```
+
+יש כל מיני דרכים לייצר וקטורים בקלות, לשימושים נפוצים.
+
+```{r vector generation}
+
+1:6 # all numbers between 1 and 6
+seq(from = 1, to = 6, by = 2) # now just the odds
+seq(1, 6, 2) # abbreviation, just keep the arguments in order
+runif(10, min = -1, max = 6) # 10 uniform numbers between -1 and 6
+rnorm(5, mean = 0, sd = 3) # 5 normally distributed points with mean 0 and std 3
+c("My", "Name", "is", pi) # c() combines scalars. In this case to a string vector, notice how the pi became a string R does the type-casting alone
+cbind(c("My", "Name", "is", pi), c(1,2,3,4)) # combine columns into a matrix with cbind (rbind does this for rows)
+round(runif(30, min = 0.5, 6.5)) # roll the dice 30 times. Round takes a vector and returns a vector with the same size
+
+```
+
+### פשוט תכנות
+
+```
+
+# here is an integer
+1L
+typeof(1L)
+# but we rarely use it... usually we will write
+1.1
+typeof(1.1)
+typeof(c(1.1, 2.1, 3.6, pi))
+# sometimes it is useful to get the length of a vector
+length(1:10)
+# but NROW and NCOL are much more predictable
+NROW(1:10)
+NCOL(1:10)
+dim(1:10) # doesn't work on such vectors...
+
+# You've already seen scientific notations
+6.022140857e23 # anyone recognizes?
+
+# We've already covered special "statistical and mathematical quirks" like
+Inf
+-Inf
+NaN
+NA
+
+# No need to introduce
+# * multiplication
+# / division
+# + -
+# but
+
+5 %% 3 # is the remainder
+
+# TRUE FALSE and the likes
+TRUE & FALSE
+TRUE | FALSE
+TRUE & TRUE
+!TRUE
+FALSE != TRUE
+FALSE == FALSE
+
+NA * 1
+NA^0
+
+c(T, T, F, T) | c(F, F, F, F) # TRUE, FALSE can be shortener to T, F
+
+# factors are important - they represent categorial or ordinal variables
+factor(c("Jan", "Feb", "Mar", "Apr"))
+typeof(factor(c("Jan", "Feb", "Mar", "Apr"))) # why do they show up as integers you ask?
+levels(factor(c("Jan", "Feb", "Mar", "Apr"))) # why hold strings, when you can hold numbers...
+
+# type cast to any type by as.XXX
+as.numeric("3.141593") # alomst pi
+as.numeric("foo! bar.") # be reasonable with your casting...
+as.character(pi) # pi masked as a string
+as.factor(c("Jan", "Feb", "Mar", "Apr")) # diff between factor and as.factor is level order
+```
+
+כמעט סיימנו את החזרה על ה-Basics. כמה לולאות והתניות.
+
+```
+for (i in 1:10){
+   # do some action like
+   cat(i)
+}
+
+counter <- 1
+while (counter <= 10){
+   # do some other action
+   cat(counter*pi, "\n") # \n is a newline
+   counter <- counter + 1
+}
+
+R_is_cool <- TRUE
+if (R_is_cool) {
+   cat("No doubt about it")
+} else {
+   cat("Bhaa")
+}
+
+# to define a function
+plus_one <- function(original_number){
+   plus_one <- original_number + 1
+   return(plus_one)
+}
+
+```
+
+### ה-data.frame וה-tibble
+
+מבני הנתונים החשובים ביותר בהקשר של ניתוח נתונים ב-R הם ה-data.frame וה-tibble.
+למעשה כל ה-datasets שעבדנו עליהם עד כה היו מסוגים אלו.
+
+הם שניהם נראים כמו מטריצה כאשר כל שורה היא תצפית וכל עמודה היא משתנה. אפשר לקרוא רק לחלק מה-data בכל מיני צורות כגון:
+
+```
+iris[iris$Species == "setosa",]
+iris[1:10, 4:5]
+```
+
+אבל הדרכים המועילות ביותר הן דווקא עם התחביר שאיתו עבדנו עד כה ואיתו נמשיך לעבוד - תחביר tidyverse.
+
+```
+library(tidyverse)
+iris %>%
+   filter(Species == "setosa")
+   
+iris %>%
+   slice(1:10) %>%
+   select(4:5)
+```
+
+### תרגול רגרסיה
+
+תזכורת, ראינו בשיעור שעבר איך מפעילים מודל רגרסיה:
+
+```
+iris_lm_complete <- lm(data = iris, 
+                       formula = Sepal.Width ~ Sepal.Length + Petal.Width + Petal.Length + Species)
+summary(iris_lm_complete)
+iris_stepwise <- MASS::stepAIC(iris_lm_complete, direction = "both", trace = TRUE)
+summary(iris_stepwise)
+
+```
