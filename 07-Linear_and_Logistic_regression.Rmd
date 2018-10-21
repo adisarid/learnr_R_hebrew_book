@@ -1,5 +1,5 @@
 ---
-title: "Data Science עם R - Linear and Logistic Regression"
+title: "Data Science עם R - Linear Regression"
 author: "עדי שריד / adi@sarid-ins.co.il"
 output: html_document
 ---
