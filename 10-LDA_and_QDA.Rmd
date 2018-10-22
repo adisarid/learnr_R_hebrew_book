@@ -36,6 +36,7 @@ qda_model = MASS::qda(formula, data)
 ```
 
 ```{r lda to predict no shows, include = FALSE}
+library(tidyverse)
 
 appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>%
   mutate(no_show = `No-show` == "Yes") # change the Yes/No into True/False (which is like having 1-0)
