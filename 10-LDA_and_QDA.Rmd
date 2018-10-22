@@ -1,0 +1,170 @@
+---
+title: "Data Science עם R - פתרון בעיות סיווג באמצעות LDA ו-QDA"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+ביחידה זו נלמד על שתי שיטות לפתרון בעיות סיווג: Linear Discriminant Analysis ו-Quadratic Discriminant Analysis (או בקיצור LDA ו-QDA).
+
+## LDA
+
+שיטת LDA מבוססת על הנחה שכאשר מפצלים את הנתונים לקטגוריות הסיווגים השונות (לדוגמה, אנשים שמגיעים לבדיקות רפואיות ואנשים שמבריזים מהם), אז כל תת-אוכלוסיה מתפלגת נורמלית.
+כמו כן, אנו מניחים שהפרופורציה של כל תת-אוכלוסיה מיוצגת היטב במדגם, כלומר ניתן לאמוד את חלקם היחסי של אנשים שמבריזים מבדיקות רפואיות, מתוך המדגם שלנו.
+
+ההסתברות שתצפית מסוימת שייכת לקבוצה $k$ הינה:
+
+\[p(Y=k|X=x)=\frac{\pi_kf_k(x)}{\sum_{i=1}^K{\pi_if_i(x)}}\]
+
+בהנחת הנורמליות, אנו יכולים לבטא את פונקצית הצפיפות $f_k(x)$ באמצעות נוסחאות הצפיפות הנורמלית, ולהציבן בנוסחה שלעיל.
+
+על ידי מניפולציה זו, ניתן להגיע לנוסחה סגורה לביטוי $p(Y=k|X=x)$.
+
+שיטת qda פועלת באופן דומה, רק שהיא מחלישה הנחה הנוגעת לשונות של ה-X-ים. 
+ב-lda הנחת העבודה היא שהשונות בכל תת-קבוצה קבועה, עוד שב-qda לא מניחים הנחה זו.
+
+לשמחתנו, ההפעלה של שיטה זו מאוד דומה לצורת ההפעלה של רגרסיה לינארית. השיטה תעבוד טוב במיוחד כאשר ישנה הפרדה בין חלקים שונים של ה-dataset (נניח קבוצות מובחנות במיוחד אחת מהשניה, בהיבט המשתנים הבלתי תלויים).
+
+```
+lda_model = MASS::lda(formula, data)
+qda_model = MASS::qda(formula, data)
+
+```
+
+```{r lda to predict no shows, include = FALSE}
+
+appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>%
+  mutate(no_show = `No-show` == "Yes") # change the Yes/No into True/False (which is like having 1-0)
+
+# split to train and test set
+appointments <- appointments %>%
+  mutate(is_train = runif(NROW(appointments)) <= 0.8)
+
+# build the linear regression model
+appoint_lda <- MASS::lda(formula = 
+                           no_show ~ Gender + Age + Scholarship + Hipertension + Diabetes +
+                           Alcoholism + Handcap + SMS_received,
+                         data = appointments %>% filter(is_train))
+
+appoint_qda <- MASS::qda(formula = 
+                           no_show ~ Gender + Age + Scholarship + Hipertension + Diabetes +
+                           Alcoholism + Handcap + SMS_received,
+                         data = appointments %>% filter(is_train))
+
+summary(appoint_lda)
+summary(appoint_qda)
+
+```
+
+הפונקציה predict, תיתן לנו את ההסתברות להשתייכות לכל קבוצה. כמובן שבשתי קבוצות בלבד, מספיק להסתכל על עמודה אחת מבין השתיים.
+
+```{r lda and qda predict form}
+lda_pred <- predict(appoint_lda, 
+                    newdata = appointments)
+qda_pred <- predict(appoint_qda,
+                    newdata = appointments)
+glimpse(lda_pred$posterior)
+glimpse(lda_pred$posterior[,2])
+glimpse(qda_pred$posterior[,2])
+```
+
+***
+
+### תרגיל
+
+השוו בין שיטות qda, lda, והרגרסיה הלוגיסטית שבפרק הקודם.
+הציגו את מטריצת הבלבול עבור ערך threshold של 0.2, בהתייחס ל-test set.
+
+הציגו את ה-ROC של שיטת הרגרסיה הלוגיסטית, ה-lda וה-qda על תרשים אחד. האם אתם מצליחים לזהות הבדלים?
+
+השוו תוצאות אלו לתוצאות הסיווג שקיבלנו מאלגוריתם ה-knn שבו השתמשנו בפרק קודם. איך הכי נכון לבצע השוואה זו?
+
+מה השיטה המצביעה על הביצועים הטובים ביותר בזיהוי אנשים שהולכים לא-להגיע לפגישה?
+
+***
+
+```{r roc for lda and qda, include = FALSE}
+
+# to compare the logistic regression lets build it (same as last chapter):
+appoint_glm <- glm(formula =
+                     no_show ~ Gender + Age + Scholarship + Hipertension + Diabetes +
+                     Alcoholism + Handcap + SMS_received,
+                   family = binomial,
+                   data = appointments %>% filter(is_train))
+
+# now, lets add the lda, qda, and glm predictions
+
+appointments <- appointments %>%
+  mutate(lda_prob = lda_pred$posterior[,2],
+         qda_prob = qda_pred$posterior[,2],
+         glm_prob = predict(appoint_glm, newdata = appointments))
+
+appt_roc_lda <- appointments %>%
+  filter(!is_train) %>%
+  arrange(desc(lda_prob)) %>%
+  mutate(tpr=cumsum(no_show)/sum(no_show),
+         fpr=cumsum(!no_show)/sum(!no_show)) %>%
+  select(tpr, fpr) %>%
+  mutate(type = "lda")
+
+appt_roc_qda <- appointments %>%
+  filter(!is_train) %>%
+  arrange(desc(qda_prob)) %>%
+  mutate(tpr=cumsum(no_show)/sum(no_show),
+         fpr=cumsum(!no_show)/sum(!no_show)) %>%
+  select(tpr, fpr) %>%
+  mutate(type = "qda")
+
+appt_roc_glm <- appointments %>%
+  filter(!is_train) %>%
+  arrange(desc(glm_prob)) %>%
+  mutate(tpr=cumsum(no_show)/sum(no_show),
+         fpr=cumsum(!no_show)/sum(!no_show)) %>%
+  select(tpr, fpr) %>%
+  mutate(type = "glm")
+
+appt_roc_full <- bind_rows(appt_roc_lda,
+                           appt_roc_qda,
+                           appt_roc_glm)
+
+ggplot(appt_roc_full, aes(y = tpr, x = fpr, color = type)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle("An ROC for our medical appointment logistic regression model") +
+  geom_abline(intercept = 0, slope = 1)
+
+# To compare the KNN approach
+knn_classifier <- FNN::knn(train = appointments %>%
+                             filter(is_train) %>%
+                             select(Age, Scholarship:SMS_received) %>%
+                             as.matrix(),
+                           test = appointments %>%
+                             filter(!is_train) %>%
+                             select(Age, Scholarship:SMS_received) %>%
+                             as.matrix(),
+                           cl = appointments %>%
+                             filter(is_train) %>%
+                             select(no_show) %>%
+                             as.matrix(),
+                           k = 3
+                             )
+# the error rate of the knn classifier here is:
+confusion <- tibble(knn_result = as.character(knn_classifier),
+                    real_result = appointments$no_show[!appointments$is_train]) %>%
+    group_by(real_result) %>%
+    count(knn_result) %>%
+    mutate(prop = n/sum(n)) %>%
+    select(-n) %>%
+    spread(key = knn_result, value = prop)
+
+# the TPR = 0.112
+# the FPR = 0.089
+
+```
