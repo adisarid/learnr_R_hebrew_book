@@ -1,0 +1,396 @@
+---
+title: "Data Science עם R - רגרסיה לוגיסטית וסיווג"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+ביחידה זו נדון ברגרסיה לוגיסטית.
+
+רגרסיה לוגיסטית דומה בהרבה מובנים לרגרסיה לינארית: היא מתבססת על מבנה לינארי "מסוים", וגם בהיבט הפרקטי, ב-R מריצים אותה בצורה מאוד דומה, ומפרשים אותה בצורה דומה.
+אבל יש לה הבדל משמעותי - במקום לחזות ערך מספרי "רחב" היא חוזה הסתברות, כלומר ערך מספרי בין 0 ל-1.
+לכן היא מתאימה לסיווג - נניח ההסתברות שלקוח ינטוש, או שליד פוטנציאלי יקנה את המוצר.
+
+מה הבעיה עם רגרסיה לינארית לבעיות סיווג?
+
+בבעיות סיווג, אנחנו מנסים לחזות את ההסתברות למאורע מסוים. 
+\[p(Y=1|X)\]
+או בכתיב מקוצר, פשוט
+\[p(X)\]
+לכן אם ננסה להשתמש במודל רגרסיה לינארית נקבל את הנוסחה הבאה:
+
+\[p(X) = \beta_0 + \beta_1X_1+\ldots\beta_p X_p\]
+
+כאשר $Y$ הוא המשתנה התלוי (לקוח ינטוש), ו-x הם המשתנים המסבירים.
+אבל אם נאמוד את פרמטרי ה-$\beta$ ונבנה מודל רגרסיה לינארית, בהחלט ייתכן שנקבל עבור ערכים מסוימים הסתברויות שליליות או גבוהות מ-1! 
+
+זה כמובן לא ייתכן, אפשרות אחת היא להשתמש בפונקציית "עיגול" ולהפוך ערכים שליליים ל-0 וערכים מעל 1 ל-1. עם זאת, אם מראש היינו מתאימים מודל שתוצאותיו מוגבלות בין 0-1 ייתכן שביצועיו היו טובים יותר.
+
+כאן נכנסת לביטוי פונקציית ה-logit.
+
+\[p(X)=\frac{e^{\beta_0 + \beta_1 X_1 + \ldots + \beta_p x_p}}{1 + e^{\beta_0 + \beta_1 X_1 + \ldots + \beta_p x_p}}\]
+
+פונקציה זו תמיד מקבלת ערכים בין 0 לבין 1. הרכיב שבחזקת $e$ הוא לינארי, ודומה לרכיב שבו השתמשנו ברגרסיה לינארית.
+
+בהימורי ספורט (מרוצי סוסים וכדומה) מקובל למדוד את היחס לזכיה (ולא את ההסתברות לזכיה). היחס לזכיה במונחים שהגדרנו יהיה:
+
+\[\frac{p(X)}{1-p(X)} = e^{\beta_0 + \beta_1 X_1 + \ldots}\]
+
+זה מלמד אותנו משהו חשוב בנוגע למשמעות של המקדמים $\beta$. להזכירכם, ברגרסיה לינארית, מקדמים אלו שימשו אותנו כדי למדוד את השינוי הממוצע במשתנה התלוי $y$ כאשר המשתנה הבלתי תלוי גדל ביחידה אחת. 
+ברגרסיה לוגיסטית, הגודל $e^{\beta_1}$ מלמד אותנו **פי כמה ישתפר הסיכוי** כאשר המשתנה הבלתי תלוי $X_1$ גדל ביחידה אחת.
+
+כדי למצוא את המקדמים ברגרסיה לוגיסטית, משתמשים בשיטה הנקראת Maximum Likelihood, אך לא נתמקד בתיאוריה מאחורי השיטה.
+
+כדי להפעיל מודל של רגרסיה לוגיסטית ב-R כל מה שנדרש הוא לעשות כמה שינויים קלים בפקודות המוכרות:
+
+```{r example for logistic regression, warnings=FALSE, messages=FALSE}
+
+library(tidyverse)
+
+# read the no show data of patients
+appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>%
+  mutate(no_show = `No-show` == "Yes") # change the Yes/No into True/False (which is like having 1-0)
+
+# split to train and test set
+appointments <- appointments %>%
+  mutate(is_train = runif(NROW(appointments)) <= 0.8)
+
+# build the linear regression model
+appointments_model <- glm(formula = 
+                            no_show ~ Gender + Age + Scholarship + Hipertension + Diabetes +
+                            Alcoholism + Handcap + SMS_received,
+                          family = binomial,
+                          data = appointments %>% filter(is_train))
+
+summary(appointments_model)
+
+```
+
+מבנה התוצאות מאוד דומה. המקדמים כעת מייצגים את החזקות, כלומר כאשר:
+
+Estimate of Scholarship = 0.17266 - כלומר בעלי מלגה יותר סביר שיבריזו מפגישה עם רופא, פי 1.2. או במילים אחרות, לגבי כל המקדמים, אפשר לגשת לחישוב המקדמים ברגרסיה באופן הבא:
+   
+```{r coefficient meaning in logistic regression}
+
+exp(appointments_model$coefficients)
+
+```
+
+המדד R-Square התחלף במדד שנקרא AIC (קריטריון Akaike).  כאשר המדד נמוך יותר המשמעות היא שהמודל טוב יותר.
+השאריות "residuals" התחלפו ב"deviance". גם פה, ככל שהערך קטן יותר, המשמעות היא שהמודל יותר מתאים לנתונים.
+גם פה המקדמים השונים מוצגים עם מבחן השערה המדווח האם הם שונים מ-0 באופן מובהק, כלומר אכן משפיעים על משתנה המטרה.
+
+*** 
+
+## תרגיל
+
+   1. נסו לשפר את מודל הרגרסיה הנ"ל על ידי הורדה ו/או הוספה של משתנים, כאשר אתם משתמשים בקריטריון deviance או AIC. באפשרותכם גם להיעזר בפונקציה `MASS::stepAIC` 
+   
+```{r stepwise to improve logistic regression, include=FALSE}
+
+appointments_model_step <- MASS::stepAIC(object = appointments_model, direction = "both",
+                                        trace = 2)
+
+```
+
+   2. באמצעות פונקציית `mutate` הוסיפו ל-appointments משתנה המתאר את תוצאת החישוב של המודל המעודכן. הציגו בתרשים boxplot את ההתפלגות של ערכי תוצאת החישוב בהפרדה לפי המשתנה no_show. באפשרותכם להיעזר בקוד הבא:
+   
+```
+# use the help of ?predict.glm to discover what do you need to put in the type argument
+# (we want the probability of not showing to the appointment).
+
+appointments <- appointments %>%
+   mutate(probability_no_show = predict(XXX,
+                                        newdata = appointments %>% filter(!is_train),
+                                        type = XXX))
+```
+
+```{r separate the outcome and chart by actual result, include = FALSE}
+appointments <- appointments %>%
+  mutate(probability_no_show = predict(appointments_model_step,
+                                     newdata = appointments,
+                                     type = "response"))
+
+ggplot(appointments %>% filter(!is_train), aes(x = no_show, y = probability_no_show)) + 
+  geom_boxplot()
+
+```
+
+   3. ברגרסיה לוגיסטית מקבלים הסתברויות, אבל לרוב, אנחנו מעוניינים לסווג אותם באופן ברור יותר, כדי שניתן יהיה לקבל החלטה. סיווג אפשרי לדוגמה הוא להתייחס לכל מי שהסתברותו החזויה לאי-הגעה הינה מעל 0.2 כמישהו שהולך לא להגיע (0.2 הינו סף לדוגמה, אך באותה המידה זה יכל להיות סף אחר).
+הוסיפו משתנה ל-appointments הנקרא predicted_no_show0.2 שיקבל TRUE החל מערך 0.2 להסתברות החזויה.
+      
+``` 
+appointments <- appointments %>%
+  mutate(XXX = XXX >= XXX)
+```
+
+```{r predicted no show, include=FALSE}
+appointments <- appointments %>%
+  mutate(predicted_no_show0.2 = probability_no_show >= 0.2)
+```
+
+אחד מהכלים העומדים לרשותנו כדי להבין את טיב המודל, בנוסף ל-AIC ול-Deviance הוא "מטריצת בלבול". מטריצת בלבול מציגה את כל הסיווגים הנכונים והלא נכונים מכל הסוגים. היא נראית כך:
+   
+```
+|Val/Predict|FALSE|TRUE|
+|     FALSE | TN  | FP |
+|     TRUE  | FN  | TP |
+```
+
+כאשר:
+
+   * FP = False Positive = טעות מסוג ראשון
+   * FN = False Negative = טעות מסוג שני
+
+או במילים אחרות:
+![סוגי הטעויות](Type_IandType_II_errors.jpg)
+מקור: [http://www.statisticssolutions.com/to-err-is-human-what-are-type-i-and-ii-errors/](http://www.statisticssolutions.com/to-err-is-human-what-are-type-i-and-ii-errors/)
+
+   4. כעת נחשב מטריצת בלבול בהתבסס על וקטור הסיווג שחישבנו בסעיף הקודם. היעזרו בקוד הבא:
+
+```
+# This code will compute a confusion matrix using absolute numbers
+confusion_abs <- appointments %>%
+  filter(!is_train) %>%
+  count(XXX, XXX) %>%
+  spread(predicted_no_show0.2, XXX)
+
+# It is also useful to have it in percentage of row
+confusion_prc <- appointments %>%
+  filter(!is_train) %>%
+  count(XXX, XXX) %>%
+  group_by(no_show) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(predicted_no_show0.2, XXX)
+
+```
+
+מה שיעור הטעות מסוג ראשון? מה שיעור הטעות מסוג שני?
+
+```{r compute confusion matrix, include = FALSE}
+
+confusion_abs <- appointments %>%
+  filter(!is_train) %>%
+  count(predicted_no_show0.2, no_show) %>%
+  spread(predicted_no_show0.2, n)
+  
+confusion_prc <- appointments %>%
+  filter(!is_train) %>%
+  count(predicted_no_show0.2, no_show) %>%
+  group_by(no_show) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(predicted_no_show0.2, prop)
+
+# Type-I error is 32.2% and Type-II error is 52.9%
+```
+
+מה קורה כשמריצים את הקוד הנ"ל עם ערכים קיצוניים יותר (נניח 0.1 או 0.9)?
+
+   5. חברת הביטוח הרפואי מעוניינת לבצע פעולות לעידוד הגעה. לשם כך היא מעוניינת לתמרץ את האנשים באמצעות שיחת טלפון אישית מאחות המרפאה יום לפני הביקור. החברה מעוניינת לקבוע סף תחזית שהחל ממנו תבצע את ההתקשרויות. כלכלני החברה חישבו שעלות התקשרות למטופל היא 5 שקלים, אך עלות אי-הגעה לפגישה עם רופא היא 25 שקלים. נתבקשתם להציע סף הסתברותי שהחל ממנו תבוצע השיחה למטופל. הניחו שאם מתבצעת שיחת הטלפון אז המטופל מגיע בסבירות של 100%. נבצע את התרגיל בשלבים.
+   
+```
+# first, lets build a function that takes as an argument the threshold, and returns the total cost
+compute_cost <- function(XXX){
+   appointments_cost <- appointments %>%
+      filter(!is_train) %>%
+      mutate(predicted_outcome = probability_no_show >= threshold) %>%
+      mutate(per_record_cost = 
+                5*(predicted_outcome == 1 & no_show == 1) + 
+                25*(XXX == 0 & XXX == XXX)
+                0*(XXX = XXX & XXX == XXX) + 
+                5*(XXX = XXX & XXX = XXX))
+   return(sum(XXX))
+}
+
+# to get the function loaded into the environment just run the code 
+# (ctrl+L when standing on the first line of the function or last line } of the function. 
+# R will then run your code and "compile" the function.)
+
+
+# Now for the second part, let's run a for loop in different probability threshold to look for the 
+# minimum cost.
+# There are better ways than for loops, like functional programming, but that's a more advanced topic
+# that we're not going to cover now.
+
+# initialize a variable which will contain the cost
+cost <- NULL
+# now compute the cost as a function of varying thresholds
+for (threshold in seq(from = XXX, to = XXX, by = XXX)){
+   cost <- c(cost,
+             compute_cost(XXX))
+}
+
+# now make a tibble containing the cost and the thresholds you used
+cost_benefit <- tibble(threshold = seq(XXX), 
+                       cost = cost)
+
+# plot the cost as a function of threshold. When should the nurse call?
+ggplot(cost_benefit, aes(XXX)) + 
+  geom_point() + geom_line()
+```
+
+```{r function to return confusion, include = FALSE}
+compute_cost <- function(threshold){
+  appointments_tmp <- appointments %>%
+    filter(!is_train) %>%
+    mutate(predicted_outcome = probability_no_show >= threshold) %>%
+    mutate(per_record_cost = 
+             5*(predicted_outcome == 1 & no_show == 1) +
+             25*(predicted_outcome == 0 & no_show == 1) +
+             0*(predicted_outcome == 0 & no_show == 0) +
+             5*(predicted_outcome == 1 & no_show == 0)
+             )
+  
+  return(sum(appointments_tmp$per_record_cost))
+}
+
+cost <- NULL
+for (i in seq(0, 1, 0.01)){
+  cost <- c(cost, compute_cost(i))
+}
+
+cost_benefit <- tibble(cost, threshold = seq(0, 1, 0.01))
+
+ggplot(cost_benefit, aes(x = threshold, y = cost)) + 
+  geom_point() + geom_line()
+
+```
+
+בקוד זה בדקנו את כל הdataset, למרות שעלינו להשתמש בפועל ב-test set. עדכנו את הקוד, האם המלצתכם משתנה?
+
+חשבו, מה הייתם ממליצים אילו העלות של אי-הגעה לרופא היתה 50 ש"ח במקום 25 ש"ח? מה הייתם ממליצים אם היא היתה 5 ש"ח?
+
+```{r old code I used for making confusion tables, include=FALSE}
+# 
+# confuse_no_show <- function(threshold){
+#   appointments_tmp <- appointments %>%
+#     mutate(predicted_outcome = probability_no_show >= threshold) %>%
+#     mutate(TN = predicted_outcome == 0 & no_show == 0,
+#            TP = predicted_outcome == 1 & no_show == 1,
+#            FN = predicted_outcome == 0 & no_show == 1,
+#            FP = predicted_outcome == 1 & no_show == 0
+#            ) %>%
+#     select(TN, TP, FN, FP) %>%
+#     summarize_all(funs(sum(.)))
+# 
+#   return(appointments_tmp)
+# }
+```
+
+
+   6. מונח מאוד חשוב בבעיות סיווג הוא ROC. ראשי התיבות מייצגים Reciever Operating Characteristic וצורת הניתוח פותחה במלחמת העולם השנייה כדי לנתח את יכולות הצבא האמריקאי לזהות מטוסים יפנים. מאז משתמשים בצורת הניתוח הזו (למעשה בסוג הגרף הזה) כדי לנתח בעיות סיווג שמתבססות על סף סיווג, כמו ברגרסיה לוגיסטית. בסעיף זה נלמד על עקומות ROC ונראה איך ניתן לצייר אחת המתאימה למודל שלנו.
+   
+עקומות ROC מייצגות בציר y את הזיכוי לזהות אירוע (במקרה שלנו, לזהות אי-הגעה לפגישה), כנגד הסיכוי לטעות ולסווג אירוע בטעות (במקרה שלנו לסווג מישהו כ"לא מגיע" למרות שבעצם הוא כן יגיע). 
+
+בשפת "מטריצת הבלבול שלנו", אנחנו נצייר בציר y את ה-True Positive כנגד False Positive. עבור כל סף שנקבע יהיו לנו שני מספרים כאלו, וכאשר נשנה את הסף נקבל זוג חדש.
+
+כדי לצייר את ה-ROC, השתמשו בהנחיות הבאות:
+
+```
+# first arrange the appointments dataset by the predicted probability vector, in a descending order
+# then, using mutate compute the cumulative sum of real no shows divided by the total number of no shows
+# using another mutate, compute the cumulative sum of show-ups divided by the total number of show-ups
+
+appointments_roc <- appointments %>%
+   arrange(desc(XXX)) %>%
+   mutate(tpr = cumsum(XXX)/sum(XXX)) %>%
+   mutate(fpr = cumsum(!XXX)/sum(!XXX))
+
+# can you explain why this works? hint, think about what your are doing when you are sorting
+# the probability column.
+
+# plot the resulting line
+ggplot(appointments_roc, aes(x = fpr, y = tpr)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  ggtitle("An ROC for our medical appointment logistic regression model")
+  geom_abline(intercept = 0, slope = 1)
+
+```
+
+```{r hidden code to solve the ROC tibble, include=FALSE}
+
+appointments_roc <- appointments %>%
+  filter(!is_train) %>%
+  arrange(desc(probability_no_show)) %>%
+  mutate(tpr=cumsum(no_show)/sum(no_show),
+         fpr=cumsum(!no_show)/sum(!no_show))
+
+```
+```{r how to draw an ROC, include=TRUE}
+
+ggplot(appointments_roc, aes(x = fpr, y = tpr)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle("An ROC for our medical appointment logistic regression model") +
+  geom_abline(intercept = 0, slope = 1)
+
+```
+```{r add code comparing lm with the logistic, include = FALSE}
+# appointments_lm_model <- lm(formula = 
+#                             no_show ~ Gender + Age + Scholarship + Hipertension + Diabetes +
+#                             Alcoholism + Handcap + SMS_received,
+#                             data = appointments %>% filter(is_train))
+# 
+# appointments_roc_lm <- appointments %>%
+#   mutate(probability_no_show = predict(object = appointments_lm_model, newdata = appointments)) %>%
+#   mutate(probability_no_show = case_when(probability_no_show > 1 ~ 1,
+#                                          probability_no_show < 0 ~ 0,
+#                                          TRUE ~ probability_no_show)) %>%
+#   arrange(desc(probability_no_show)) %>%
+#   mutate(tpr=cumsum(no_show)/sum(no_show),
+#          fpr=cumsum(!no_show)/sum(!no_show))
+# 
+# lm_glm_compare <- appointments_roc %>%
+#   mutate(model = "logistic") %>%
+#   bind_rows(appointments_roc_lm %>%
+#               mutate(model = "linear"))
+# 
+# ggplot(lm_glm_compare, aes(x = fpr, y = tpr, color = model)) +
+#   geom_line() +
+#   xlab("False positive rate (1 - Specificity)") +
+#   ylab("True positive rate (Sensitivity)") +
+#   scale_x_continuous(labels = scales::percent) +
+#   scale_y_continuous(labels = scales::percent) +
+#   ggtitle("An ROC for our medical appointment logistic regression vs. linear model") +
+#   geom_abline(intercept = 0, slope = 1)
+```
+
+חשבו:
+מה המשמעות של הקו y=x? איזה "כלל הכרעה" מתלכד עם קו זה?
+מה היה קורא אילו היינו מקבלים עקום שנמצא כולו מתחת לקו y=x?
+
+
+*** 
+
+## רגרסיה לוגיסטית לסיווג מספר קטגוריות
+
+איך משתמשים ברגרסיה לוגיסטית כדי לתת סיווג ליותר מקטגוריה אחת?
+בעקרון מדובר בהכללה פשוטה.
+נניח ויש לנו שלושה סיווגים, setosa, versicolor, virginica.
+כל שעלינו לעשות הוא לבנות שני מודלים של רגרסיה לוגיסטית:
+\[P(Y=\text{setosa}|X)\]
+\[P(Y=\text{versicolor}|X)\]
+המודל השלישי קשור לשניים הקודמים:
+\[P(Y=\text{virginica}|X) = 1-P(Y=\text{setosa}|X)-P(Y=\text{versicolor}|X)\]
+
+R יודע לעשות זאת בעצמו, לדוגמה:
+
+```{r example for classification of multiple classes using glm}
+
+iris_mult <- nnet::multinom(formula = Species ~ ., data = iris)
+summary(iris_mult)
+
+```
+
+אבל ישנן שיטות טובות יותר לצורך מציאת סיווגים של מספר קטגוריות, ובפרק הבא נתמקד בשתיים מהן: LDA ו-QDA.
