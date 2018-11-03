@@ -1,0 +1,172 @@
+---
+title: "Data Science עם R - Trees and (random)Forests"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+ביחידה זו נלמד על שתי שיטות נוספות המשמשות לחיזוי ורגרסיה: עצים, ויערות אקראיים (trees and random forests).
+
+תזכורת: באחת היחידות הקודמות התאמנו מודל רגרסיה לינארית למחיר יהלומים. כאשר פיצלנו את המודל לשני מודלים העובדים כל אחד על תחום של משתנה קטגורי, איכות החיזוי של המודל השתפרה.
+
+הרעיון הכללי של עצים הוא דומה - לפצל את המרחב, כל פעם לפי משתנה אחר, עד שמגיעים ל"עלים" בהם ניתן החיזוי (כרגרסיה או סיווג).
+
+עצים הם "נחמדים" כי הם מושכים ויזואלית ונוח לפרש אותם, אבל בדרך כלל הם לא נותנים תוצאות טובות, ומאוד רגישים לשינויים קלים (לדוגמה להוספה או החסרה של תצפיות). לכן, הכללות מקובלות לעצים הם כאלו המשכפלות את התהליך פעמים רבות (לדוגמה ל"יער אקראי", שבו גם נדון ביחידה זו). שכפול התהליך לעצים מרובים הופך את המודל ליותר רובוסטי ויותר מדויק, אבל קצת פחות ברור לפרשנות.
+
+```{r fitting a tree to the diamonds data, warning=FALSE, message=FALSE}
+
+library(tidyverse)
+
+ggplot(diamonds, aes(y = price, x = carat)) + 
+  facet_wrap(~ clarity) + 
+  stat_smooth(method = "lm")
+
+library(rpart)
+
+diamond_price_tree <- rpart(formula = price ~ ., 
+                            data = diamonds)
+
+library(rpart.plot)
+prp(diamond_price_tree)
+summary(diamond_price_tree)
+```
+
+פרמטרים שונים שולטים על עומק העץ. ככל שעץ עמוק יותר, כך אנחנו ניכנס למצבים של Over-fitting. הנה גידול עץ עמוק במיוחד (וכנראה לא מאוד מועיל).
+```{r varying the complexity parameter}
+diamond_price_tree_large <- rpart(formula = price ~ ., 
+                                  data = diamonds,
+                                  control = rpart.control(cp = 0.0005, xval = 10))
+prp(diamond_price_tree_large)
+#summary(diamond_price_tree_large)
+
+```
+
+הפרמטר cp שאותו שינינו כדי לשלוט על גודל העץ הוא פרמטר מורכבות העץ (complexity parameter). הוא שולט על אלגוריתם הגידול של העץ. כאשר הפרמטר נמוך, האלגוריתם נוטה לבצע יותר פיצולים, וכאשר הפרמטר גבוה, ישנם פחות פיצולים. למעשה הפרמטר מציב רף לפיצול, ורק אם פיצול משפר את החיזוי בערכו של הפרמטר, אז מתבצע הפיצול.
+
+למעשה, אפשר גם לגדל עץ עמוק ואז לגזום אותו `prune`, כדי לייצר עץ קטן בחזרה. באופן מסויים זה מזכיר את האלגוריתם של step wise selection (במודל של רגרסיה) שאותו הזכרנו ביחידה קודמת. שני האלגוריתמים "הולכים אחורה" ומנסים להוריד משתנים.
+
+איך עובד האלגוריתם של גידול וגיזום עצים?
+
+## גידול וגיזום עצים
+
+האלגוריתם מחלק את מרחב התצפיות $X$ למלבנים, בכל מלבן מתבצע ממוצע של ערכי התצפיות $y$, וזו התחזית הניתנת לתצפיות חדשות השייכות לאותו המלבן.
+
+כלומר, האלגוריתם מנסה למזער את הגודל הבא:
+
+\[\sum_{j=1}^J\sum_{i\in R_j}\left(y_i-\hat{y}_{R_j}\right)^2\]
+
+כאשר $J$ הוא מספר המלבנים אליהם מחולק מרחב ה-$X$.
+
+בכל רגע נתון באלגוריתם, נבחן הפיצול הטוב ביותר **כרגע**, כלומר, האלגוריתם מחפש את המשתנה ה-$X_j$ והערך הקריטי $s$, כך שיביא למינימום את הגודל:
+
+\[\sum_{i: x_i\in R_1(j,s)}\left(y_i-\hat{y}_{R_1}\right)^2 + \sum_{i: x_i\in R_2(j,s)}\left(y_i-\hat{y}_{R_2}\right)^2\]
+
+כאשר:
+
+\[R_1(j,s) = \left\{X|X_j<s\right\} \text{ and } R_2(j,s) = \left\{X|X_j\geq s\right\}\]
+
+במילים אחרות, מדובר באלגוריתם "חמדן" (הוא תמיד מחפש את הדבר הטוב ביותר כרגע, ולעיתים זה יכול להוביל לתוצאות לא טובות).
+
+כדי לגזום עץ (להקטין את מידת הסיבוכיות שלו) ניתן להשתמש בפקודה `prune`.
+
+```{r pruning a tree}
+
+diamond_price_pruned <- prune(diamond_price_tree_large, cp = 0.05)
+
+prp(diamond_price_pruned)
+
+```
+
+## שימוש ב-Cross validation לבחירת פרמטרים
+
+כדי לבחון מה פרמטר ה-cp הרצוי, מומלץ להשתמש ב-cross validation.
+
+מה עושה cross validation?
+
+   * בחר ערך cp.
+   * חלק את הנתונים ל-k חלקים (k-fold cross validation, $k=10$ היא בחירה נפוצה).
+   * עבור $\frac{k-1}{k}$ מהנתונים בנה עץ באמצעות הפרמטר cp.
+   * מקבלים $k$ ערכי שגיאה עבור הפרמטר cp - ובמילים אחרות את התפלגות השגיאה.
+   * חזור על התהליך עבור ערכים שונים של cp.
+
+האלגוריתם של `rpart` למעשה עושה את כל זה עבורנו.
+
+```{r example for xvalidation}
+
+# here is the cp table
+diamond_price_tree_large$cptable
+
+# the shortest way - use a predefined function to plot the xval cp errors
+rpart::plotcp(diamond_price_tree_large)
+
+```
+
+במקרה זה, היות שיש לנו מדגם מאוד גדול של יהלומים, השגיאה אכן קטנה כאשר הפרמטר קטן, ואנחנו עוד לא בתחום של overfitting. במקרים אחרים ייתכן שנראה גרף שאינו מונוטוני, כלומר כאשר נקטין את cp, בשלב מסוים נקבל מצב שבו השגיאה גדלה.
+
+כמו כן, ניתן לראות שהתפוקה השולית של הקטנת ה-cp פוחתת.
+
+עד כה, דנו בעץ רגרסיה - עץ המספק חיזוי לערכים רציפים. ישנם עצי סיווג הרלוונטיים במקרים בהם נדרש לסווג תצפיות לערכים בדידים (classification), בדומה לאלגוריתמים אחרים שדנו בהם ביחידות קודמות (knn, רגרסיה לוגיסטית, lda, ו-qda). 
+
+במקרה של עצי סיווג, לא משתמשים בשגיאת RSS אלא במדד אחר הנקרא Gini index.
+
+\[G = \sum_{k=1}^K\hat{p}_{mk}(1-\hat{p}_{mk})\]
+
+כאשר $\hat{p}_{mk}$ הוא הפרופורציה של תצפיות במרחב ה-$m$, עם סיווג $k$. מדד זה נמוך ככל שערכי $\hat{p}_{mk}$ הם יותר קיצוניים (קרובים ל-0 או ל-1), קרי העלים של העץ "טהורים".
+
+```{r plot p time 1-p}
+
+ggplot(tibble(p = seq(0, 1, 0.01), q = seq(1, 0, -0.01)), aes(x = p, y = p*q)) + 
+  geom_line() + 
+  ylab("G = p*(1-p)") +
+  ggtitle("Illustration: Gini index will be minimized when p=1 or p=0")
+
+```
+
+### תרגיל 1
+
+   1. התאימו עץ החלטה לנתוני הפגישות עם רופאים (קובץ Medical_Appointments_No_Shows_KaggkeV2-May-2016.csv).
+      a. במקרה זה נשתמש באופציה המובנית בפונקציה rpart לצורך cross validation. האם לדעתכם צריך גם חלוקה של הנתונים ל-train/test?
+      b. שימו לב, הנתונים מאוד לא מאוזנים, השתמשו בערך נמוך של cp כדי לייצר עץ שאינו "טריוויאלי מדי".
+      c. השתמשו ב-no-show כמשתנה מספרי ופעם אחרת כמשתנה factor. מה ההבדל בין שתי השיטות בהתייחס לתוצאות שקיבלתם מהעץ?
+   2. הציגו את העץ בצורה גרפית.
+   3. מה שיעור הטעות מסוג ראשון ומסוג שני?
+      a. תזכורת, טעות מסוג שני: הסיכוי לסווג חולה כמגיע, למרות שהוא מתכוון להבריז.
+      b. השתמשו בפונקציית `predict` לצורך חישובים אלו.
+   4. השתמשו ב-cross validation כדי לבחור את פרמטר הגיזום (prunning). איך נכון לבחור את הערך המיטבי?
+
+```{r fitting a tree to the appointments data, include = FALSE}
+
+library(tidyverse)
+
+appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>%
+  mutate(no_show = `No-show` == "Yes")
+
+library(rpart)
+appointments_tree <- rpart(data = appointments,
+                           formula = factor(no_show) ~ 
+                             Gender + Age + Scholarship + Hipertension + Diabetes +
+                             Alcoholism + Handcap + SMS_received,
+                           control = rpart.control(cp = 0.0000005))
+
+library(rpart.plot)
+prp(appointments_tree)
+summary(appointments_tree)
+plotcp(appointments_tree)
+appointments_tree$cptable
+
+
+
+```
+
+### תרגיל 2
+
+בתרגיל הבא, יהיה עליכם ליישם את מה שלמדתם על בעיות סיווג בשני הפרקים האחרונים.
+קראו את הקובץ "WA_Fn-UseC_-Telco-Customer-Churn.csv" העוסק בנטישת לקוחות.
+
+התאימו לפחות שלושה מודלים לחיזוי ומניעת נטישת לקוחות. המודלים יכולים להיות מסוגים שונים, או מאותם הסוגים עם משתנים שונים. 
+
+נתחו את טיב המודלים באמצעות test/train ובחינה של סוגי הטעויות השונות במטריצת בלבול, ובתרשים ROC.
