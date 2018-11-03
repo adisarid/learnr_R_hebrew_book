@@ -1,0 +1,98 @@
+---
+title: "Data Science עם R - הערה לגבי התאמת יתר overfitting"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+ראינו ביחידות הקודמות אלגוריתמים שונים. במהלך היחידות הזכרנו מושג הנקרא over-fitting או "התאמת יתר".
+כמו כן, הקפדנו בכל החישובים לחלק את הנתונים ל-train ול-test.
+
+בחלק זה נדגים את החשיבות של החלוקה ל-train/test ואת הזהירות המתבקשת כדי להימנע מהתאמת יתר.
+
+התאמת יתר קוראת כאשר מספר המשתנים המסבירים, $p$ גדול מאוד בהשוואה לגודל המדגם $n$.
+
+במילים אחרות, ככל שמספר המשתנים גדל, אז אלגוריתמים שונים מצליחים למצוא מודל שמתאים לנתונים הנצפים בצורה טובה, כביכול מתאר קשר סטטיסטי, אך בפועל הסיבה לכך היא שהאלגוריתם מתאר קשר מקרי-אקראי בעזרת דרגות החופש הרבות שקיימות בפרמטרים.
+
+הדגמה:
+
+   * ניקח משתנה תלוי $y$ אקראי לגמרי, ונגריל 100 תצפיות ממנו.
+   * ניקח 95 פרמטרים $x_1,\ldots,x_{95}$ ונגריל גם מהם 100 תצפיות.
+   * נבנה מודל (זה לא כל כך משנה איזה, בהדגמה שלנו נשתמש ברגרסיה לינארית).
+   * ננתח את טיב המודל.
+   * נחזור על התהליך עם חלוקה ל-train/test.
+   
+```{r overfitting in action, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+xvars <- data.frame(matrix(runif(100*95), ncol=95))
+overfitting <- tibble(y = runif(100)) %>%
+  bind_cols(xvars)
+
+glimpse(overfitting)
+
+ggplot(overfitting, aes(y)) + geom_histogram()
+
+# these are just uniformly distributed numbers, should have no kind of relationship between variables
+# here's a model with just a few X's, and no overfit. The model is insignificant.
+# the only significant coefficient beta is the intercept (which is roughly equal to the average of y)
+lm_no_overfit <- lm(data = overfitting,
+                    formula = y ~ X1 + X2 + X3)
+summary(lm_no_overfit)
+
+# now, see what happens when we add all the 95 features
+# mostly, look at the R^2. It's almost 1!
+lm_overfit <- lm(data = overfitting,
+                 formula = y ~ .)
+summary(lm_overfit)
+
+# now, see the errors of each model
+overfitting <- overfitting %>% 
+  mutate(res_no_overfit = y - predict(lm_no_overfit, newdata = overfitting),
+         res_overfit = y - predict(lm_overfit, newdata = overfitting))
+
+overfitting %>%
+  summarize(mean(abs(res_no_overfit)),
+            mean(abs(res_overfit)))
+
+# 80%+ reduction in mean absolute residual error!
+
+```
+
+עד כה עבדנו בלי חלוקה ל-train/test, ועל פניו זה נראה כאילו המודל שהתאמנו עם הרבה משתנים, הוא ממש טוב.
+כפי שניחשתם, זה בלוף...
+
+כעת נחזור על התרגיל, רק שהפעם נמדוד את עצמנו ב-test set.
+
+```{r overfitting detection with test set}
+
+overfitting <- overfitting %>%
+  mutate(is_train = runif(nrow(overfitting)) < 0.8)
+
+lm_overfit_train <- lm(data = overfitting %>% filter(is_train),
+                       formula = y ~ .)
+
+overfitting <- overfitting %>%
+  mutate(res_overfit_train = y - predict(lm_overfit_train, newdata = overfitting))
+
+overfitting %>%
+  filter(!is_train) %>%
+  summarize(mean(abs(res_no_overfit)),
+            mean(abs(res_overfit)),
+            mean(abs(res_overfit_train)))
+
+# Now the "true face" of the model is discovered. See how high the error rate of the test set is!
+# Beware of overfitting models. Always use train/test. Watch out for n and p.
+```
+
+## לסיכום
+
+   * היזהרו מהתאמת יתר.
+   * תמיד חלקו את הנתונים ל-train/test.
+   * תפעילו שיקול דעת תוך התחשבות במספר הפמטרים $p$ לעומת גודל המדגם $n$.
+
+שימו לב שאין "כלל ברזל" בנוגע ליחס בין $n$ לבין $p$, אבל שיעור הטעות של ה-test set הוא הרבה פעמים בעל משמעות עסקית, ודרך משמעות זו ניתן להבין האם המודל עוזר או שלא. כמו כן, ניתן להשוות בין מודל בסיסי-נומינלי, לבין המודל שלכם, ולראות מה מידת התרומה של המודל המורכב יותר.
