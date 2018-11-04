@@ -284,7 +284,7 @@ getTree(diamond_price_forest, k = 1)
    3. הוסיפו את הנתונים של יער זה לעקומות ה-ROC מהסעיף הקודם.
       a. שימו לב, כאשר אתם משתמשים בפונקציית predict, עליכם להגדיר את הפרמטר type בצורה מסויימת. איך?
    4. בנו תרשים של חשיבות המשתנים. מה המשתנה/ים החשוב/ים ביותר בהשפעה על נטישת/נאמנות לקוחות?
-   5. נתבקשתם לבנות מודל שיציע הנחה ללקוחות מסוימים, כדי לצמצם את הנטישה. לאילו לקוחות תציעו הנחה ובאיזה סכום? השתמשו במשתנה monthlycharges כדי לקבוע את שיעור ההנחה (אחוז מתוך משתנה זה, ללקוחות הרלוונטיים).
+   5. מנכ"ל החברה מתלבט האם להציע הנחה ללקוחות אשר המודל צופה שינטשו. סמנכ"ל הכספים טוען שחבל להציע הנחה, משתנה זה אינו משמעותי מספיק בשביל שהנחה במחיר תצליח לגרום ללקוחות להישאר. מאידך סמנכ"ל שירות הלקוחות טוען שהנחה תעזור מאוד. מנכ"ל החברה ביקש מכם לשפוט - מי מהם צודק? הציעו מודל שיבחן את ההשפעה של הנחה ללקוחות מסוימים כדי לצמצם את הנטישה. האם כדי לנקוט בטקטיקת מתן הנחות לצורך גידול בפדיון? השתמשו במשתנה monthlycharges כדי לקבוע את שיעור ההנחה (אחוז מתוך משתנה זה, ללקוחות הרלוונטיים).
 
 ```
 # some help: 
@@ -402,31 +402,83 @@ telco_discount <- telco_churn %>%
 
 # nominal revenue for the next month:
 telco_discount %>% 
-  filter(Churn == "No") %>%
-  summarize(sum(MonthlyCharges))
+  mutate(rev_next_month = ifelse(Churn == "No", MonthlyCharges, (1-predicted_churn)*MonthlyCharges)) %>%
+  summarize(sum(rev_next_month))
 
-discount_rate <- 0.85
-discount_quantile <- 0.75
-pred_quantile <- as.numeric(quantile(telco_discount$predicted_churn, discount_quantile))
+# build a function based on revenue for the next month and activation of discount rate, for the 
+# observations about the discount quantile
 
-telco_discount <- telco_discount %>% 
-  mutate(top25churn = predicted_churn >= pred_quantile) %>%
-  mutate(originalMonthlyCharges = MonthlyCharges) %>%
-  mutate(MonthlyCharges = 
-           ifelse(top25churn, originalMonthlyCharges*discount_rate, originalMonthlyCharges))
+calculate_predicted_rev <- function(discount_rate = 0.15, discount_quantile = 0.75){
+  pred_quantile <- as.numeric(quantile(telco_discount$predicted_churn, discount_quantile))
 
-telco_discount <- telco_discount %>%
-  mutate(predicted_churn_discount = 
-           predict(churn_detection, newdata = ., type = "response"))
-
-sum(telco_discount$predicted_churn_discount*telco_discount$MonthlyCharges)
-sum(telco_discount$predicted_churn*telco_discount$originalMonthlyCharges)
+  telco_discount_comp <- telco_discount %>% 
+    mutate(give_discount = predicted_churn >= pred_quantile) %>%
+    mutate(originalMonthlyCharges = MonthlyCharges) %>%
+    mutate(MonthlyCharges = 
+             ifelse(give_discount, originalMonthlyCharges*(1-discount_rate), originalMonthlyCharges)) %>%
+    mutate(rev_next_month = ifelse(Churn == "No", MonthlyCharges, (1-predicted_churn)*MonthlyCharges)) %>%
+    summarize(rev = sum(rev_next_month))
   
+  return(telco_discount_comp$rev)
+}
 
-# The measure we are going to use is expected value. We are going to use the logistic regression
-# which is the best classifier here. 
-# first, we will omit the total charges (because they are related to tenure and monthly price), 
-# and build a new model (using a train/test split).
-# Using the test set we're going to modify the monthly charges of all users with the highest 25% chance of churning by offering a 15% discount, and see if it is profitable to offer these discounts.
+# now, create a grid with the function running on different combinations
+# I'm going to use pmap to generate the results via functional programming,
+# but this can also be accomplished by looping over lines of tibble
+discount_options <- as.tibble(
+  expand.grid(discount_rate = seq(0, 0.2, 0.025), 
+              discount_quantile = seq(0.5, 0.95, 0.05))) %>%
+  mutate(rev = map2_dbl(discount_rate, discount_quantile, `calculate_predicted_rev`))
+
+ggplot(discount_options, aes(x = discount_rate, y = discount_quantile, fill = rev)) + 
+  geom_raster(interpolate = TRUE) + 
+  geom_contour(aes(z = rev), color = "yellow", size = 1.5) + 
+  ggtitle("The expected revenue as a function of discount rate and discount quantile\n(above which churn likelihood quantile to apply it)")
+  
+```
+
+## גישת ה-Boosting
+
+ביערות אקראיים ראינו כיצד חזאי בודד (עץ) משתכפל והופך לשילוב של הרבה חזאים. כאשר מבוצע שילוב של חזאים רבים הדבר מהווה פוטנציאל להפחית שגיאות שעשויות להופיע באופן מקומי בחזאים אשר נתונים פעמים רבות ל"גחמות הסטטיסטיקה" (או שגיאות הנובעות ממינימום מקומי או מהתאמת יתר).
+
+גישה נוספת חוץ מיערות אקראיים היא גישת ה-Boosting. היא יכולה להתאים לגישות שונות (לאו דווקא להכללה של עצים), אך פה נדגים אותה בהקשר העצים.
+
+נניח שהבעיה שלנו היא בעיית רגרסיה (חיזוי ערך של משתנה רציף). ב-Boosting, בכל שלב האלגוריתם יבנה עץ, שהמטרה שלו היא חיזוי השגיאה (לא הערך האמיתי של $y$ אלא השגיאה הצפוייה בהתבסס על כל העצים שנבנו עד כה).
+
+המודל מתווסף כסכום לכל יתר המודל שחושבו עד כה, עם פרמטר "הקטנה" $\lambda$.
+
+במילים אחרות, האלגוריתם מרכיב סכום של הרבה עצים קטנים, כשכל פעם הוא נותן דגש על צמצום השגיאות שהתקבלו עד כה.
+
+```
+Pseudo code:
+Set r = y, f(x)=0
+For b=1, 2,..., B repeat:
+   Fit a tree, f_curr, to the data (X,r)
+   Update f by adding current learned tree: 
+      f <- f + lambda*f_curr
+   Update the residuals
+      r - r-lambda*f_curr
+Output f
+```
+
+במקרה של בעיות סיווג, העדכון של המודלים מתבצע על ידי בניה בכל שלב של מודל סיווג (לדוגמה עץ), תוך כדי מתן משקל גדול יותר לתצפיות אשר הסיווג שלהן שגוי.
+
+ב-R יש שתי חבילות המשמשות לboosting:
+
+   * adabag
+   * xgboost
+
+### תרגיל
+
+השתמש בחבילת adabag, בפקודת `boosting` כדי לייצר חזאי לנטישת לקוחות.
+הצגת התוצאות בתרשים ה-ROC. האם ביצוע boosting שיפר את החזאים?
+
+```{r boosting example using adabag}
+library(adabag)
+
+churn_boost <- adabag::boosting(formula = Churn ~ . - is_train,
+                                data = telco_churn %>% filter(is_train),
+                                control = rpart.control(cp = 0.1),
+                                mfinal = 50)
 
 ```
