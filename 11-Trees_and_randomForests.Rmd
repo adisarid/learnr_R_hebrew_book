@@ -32,6 +32,7 @@ diamond_price_tree <- rpart(formula = price ~ .,
 
 library(rpart.plot)
 prp(diamond_price_tree)
+diamond_price_tree
 summary(diamond_price_tree)
 ```
 
@@ -119,54 +120,313 @@ rpart::plotcp(diamond_price_tree_large)
 
 ```{r plot p time 1-p}
 
-ggplot(tibble(p = seq(0, 1, 0.01), q = seq(1, 0, -0.01)), aes(x = p, y = p*q)) + 
+ggplot(tibble(p = seq(0, 1, 0.01)), aes(x = p, y = p*(1-p))) + 
   geom_line() + 
   ylab("G = p*(1-p)") +
   ggtitle("Illustration: Gini index will be minimized when p=1 or p=0")
 
 ```
 
-### תרגיל 1
 
-   1. התאימו עץ החלטה לנתוני הפגישות עם רופאים (קובץ Medical_Appointments_No_Shows_KaggkeV2-May-2016.csv).
-      a. במקרה זה נשתמש באופציה המובנית בפונקציה rpart לצורך cross validation. האם לדעתכם צריך גם חלוקה של הנתונים ל-train/test?
-      b. שימו לב, הנתונים מאוד לא מאוזנים, השתמשו בערך נמוך של cp כדי לייצר עץ שאינו "טריוויאלי מדי".
-      c. השתמשו ב-no-show כמשתנה מספרי ופעם אחרת כמשתנה factor. מה ההבדל בין שתי השיטות בהתייחס לתוצאות שקיבלתם מהעץ?
-   2. הציגו את העץ בצורה גרפית.
-   3. מה שיעור הטעות מסוג ראשון ומסוג שני?
-      a. תזכורת, טעות מסוג שני: הסיכוי לסווג חולה כמגיע, למרות שהוא מתכוון להבריז.
-      b. השתמשו בפונקציית `predict` לצורך חישובים אלו.
-   4. השתמשו ב-cross validation כדי לבחור את פרמטר הגיזום (prunning). איך נכון לבחור את הערך המיטבי?
+בחלק מהאלגוריתמים נעשה שימוש במדד מקביל למדד Gini: מדד האנטרופיה.
 
-```{r fitting a tree to the appointments data, include = FALSE}
+\[D = -\sum_{k=1}^K{\hat{p}_{mk}\log\hat{p}_{mk}}\]
 
-library(tidyverse)
 
-appointments <- read_csv("data-files/Medical_Appointments_No_Shows_KaggleV2-May-2016.csv") %>%
-  mutate(no_show = `No-show` == "Yes")
+### תרגיל
 
-library(rpart)
-appointments_tree <- rpart(data = appointments,
-                           formula = factor(no_show) ~ 
-                             Gender + Age + Scholarship + Hipertension + Diabetes +
-                             Alcoholism + Handcap + SMS_received,
-                           control = rpart.control(cp = 0.0000005))
+בתרגיל הבא נשתמש בעצי החלטה כדי לחזות את הסבירות לנטישה של לקוח.
 
+   1. קראו את הקובץ WA_Fn-UseC_-Telco-Customer-Churn.csv.
+   2. בנו מודל עץ לחיזוי הנטישה, השתמשו ב-cp קטן וב-cp גדול.
+   3. כעת ציירו את שני העצים, האם אתם מצליחים להפיק תובנות כלשהן מהעצים?
+   4. הציגו את שגיאת ה-cross validation כפונקציה של cp. מה ערך cp שלדעתכם נכון לבחור?
+   5. כעת השתמשו בערך cp שקיבלתם בסעיף הקודם. חלקו את הנתונים ל-train/test והשתמשו בנתוני ה-test כדי לייצר תרשים ROC (באפשרותכם להיעזר ביחידה שעסקה ברגרסיה לוגיסטית על מנת להיזכר בקוד הרלוונטי).
+   6. התאימו מודל רגרסיה לוגיסטית מתחרה, ובצעו השוואה של לתוצאותיו למול תוצאות העץ (ציירו את שני ה-ROC עבור האלגוריתמים שבחרתם). האם יש אלגוריתם שניתן לומר שביצועיו טובים יותר?
+
+```{r churn using rpart, include = FALSE}
+
+# q1
+telco_churn <- read_csv("data-files/WA_Fn-UseC_-Telco-Customer-Churn.csv") %>%
+  select(-customerID)
+
+# q2
+telco_churn_tree <- rpart(data = telco_churn,
+                          formula = Churn ~ .,
+                          control = rpart.control(cp = 0.001))
+# q2+q3
 library(rpart.plot)
-prp(appointments_tree)
-summary(appointments_tree)
-plotcp(appointments_tree)
-appointments_tree$cptable
+prp(telco_churn_tree)
+telco_churn_short <- prune(telco_churn_tree, cp = 0.01)
+prp(telco_churn_short)
 
+# q4
+printcp(telco_churn_tree)
+plotcp(telco_churn_tree)
+
+# q5
+telco_churn <- telco_churn %>%
+  mutate(is_train = runif(nrow(telco_churn)) < 0.8)
+
+telco_churn_tree_train <- rpart(data = telco_churn %>% filter(is_train),
+                                formula = Churn ~ . - is_train,
+                                control = rpart.control(cp = 0.01))
+
+telco_churn_deeptree_train <- rpart(data = telco_churn %>% filter(is_train),
+                                formula = Churn ~ . - is_train,
+                                control = rpart.control(cp = 0.000001))
+
+# Competitive model using logistic regression
+telco_churn_glm_train <- glm(formula = (Churn=="Yes") ~ . - is_train,
+                             family = binomial,
+                             data = telco_churn %>% filter(is_train))
+
+telco_churn_roc <- telco_churn %>%
+  mutate(probability_churn_tree = predict(telco_churn_tree_train, newdata = telco_churn)[, "Yes"]) %>%
+  arrange(desc(probability_churn_tree)) %>%
+  filter(!is_train) %>%
+  mutate(churn_numeric = Churn == "Yes") %>%
+  mutate(tpr=cumsum(churn_numeric)/sum(churn_numeric),
+         fpr=cumsum(!churn_numeric)/sum(!churn_numeric)) %>%
+  mutate(model = "tree_cp0.01")
+
+telco_churn_roc_deep <- telco_churn %>%
+  mutate(probability_churn_deeptree = 
+           predict(telco_churn_deeptree_train, newdata = telco_churn)[, "Yes"]) %>%
+  filter(!is_train) %>%
+  mutate(churn_numeric = Churn == "Yes") %>%
+  arrange(desc(probability_churn_deeptree)) %>%
+  mutate(tpr=cumsum(churn_numeric)/sum(churn_numeric),
+         fpr=cumsum(!churn_numeric)/sum(!churn_numeric)) %>%
+  mutate(model = "tree_cp0.000001")
+
+telco_churn_roc_glm <- telco_churn %>%
+  mutate(probability_churn_glm = 
+           predict(telco_churn_glm_train, newdata = telco_churn, type = "response")) %>%
+  mutate(churn_numeric = Churn == "Yes") %>%
+  filter(!is_train) %>%
+  arrange(desc(probability_churn_glm)) %>%
+  mutate(tpr=cumsum(churn_numeric)/sum(churn_numeric),
+         fpr=cumsum(!churn_numeric)/sum(!churn_numeric)) %>%
+  mutate(model = "logistic regression")
+
+roc_prep <- telco_churn_roc %>%
+  bind_rows(telco_churn_roc_deep,
+            telco_churn_roc_glm)
+  
+
+ggplot(roc_prep, aes(x = fpr, y = tpr, color = model)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle("An ROC for our churn decision tree model") +
+  geom_abline(intercept = 0, slope = 1)
+
+
+```
+   
+### לסיכום
+
+   * עצי החלטה קל להסביר למקבלי החלטות
+   * יכולים לבטא קשרים שאינם ניתנים לביטוי בנוסחת רגרסיה
+   * ניתן בקלות להשתמש במשתנים קטגוריאליים, וגם להתמודד עם ערכים חסרים
+
+אבל
+   
+   * כמודל חיזוי - האם לא כל כך טובים
+   * הם לא רובוסטיים (שינוי קל בנתונים עלול להביא לשינוי מאוד מהותי במבנה העץ)
+   
+לכן, נבנו מספר אלגוריתמים המבוססים על עצים אך הם יותר רובוסטים ולרוב בעלי ביצועים טובים יותר.
+
+   * יערות אקראיים - randomForests
+   * Bagging
+   * Boosting
+
+## יערות אקראיים (randomForests)
+
+האלגוריתם של יערות אקראיים בונה מקבץ של של עצים רבים, כאשר בכל עץ בכל פיצול, הוא מגביל את המשתנים לפיהם הוא יכול לפצל ל-$m$ משתנים בלבד (מתוך $p$ אפשריים). בדרך כלל $m\approx \sqrt{p}$).
+
+כמו כן, האלגוריתם מגריל תצפיות (במקום להשתמש בכל התצפיות הוא משתמש במדגם שלהן), לצורך בנייתו של עץ.
+
+אלגוריתם זה יכול לצמצם את ההשפעות של קורלציה בין משתנים, וכמו כן, הוא נותן הזדמנות למשתנים מסבירים שונים לבוא לידי ביטוי, אפילו אם הם לא בעלי העוצמה החזקה ביותר.
+
+לבסוף התוצר המתקבל הוא ממוצע החיזויים על פני כלל העצים.
+
+ערך מוסף בעצים הוא שניתן לחשב את ההפחתה הממוצעת במדד Gini של כל אחד מהמשתנים המסבירים, וזה מאפשר לדרג אותם לפי סדר חשיבות. בבעיית רגרסיה, החשיבות מסודרת לפי מידת "הטהורות" (במונחי RSS) שהוספת משתנה מסוים תרמה לדיוק, בממוצע.
+
+```{r diamond random forest}
+
+library(randomForest)
+
+# note the use of maxnodes, otherwise the trees are grown to maximal size
+# also limiting the number of trees to 150 - the default is 500...
+diamond_price_forest <- randomForest(
+  formula = price ~ .,
+  data = diamonds,
+  maxnodes = 15,
+  ntree = 150)
+
+# plot the importance plot
+varImpPlot(diamond_price_forest)
+
+# show an example of the first tree
+getTree(diamond_price_forest, k = 1)
 
 
 ```
 
-### תרגיל 2
+### תרגיל
 
-בתרגיל הבא, יהיה עליכם ליישם את מה שלמדתם על בעיות סיווג בשני הפרקים האחרונים.
-קראו את הקובץ "WA_Fn-UseC_-Telco-Customer-Churn.csv" העוסק בנטישת לקוחות.
+   1. בנו יער אקראי לנתוני הנטישה של telco.
+   2. חשבו על ה-test set את שיעור הטעות מסוג ראשון ושיעור הטעות מסוג שני.
+   3. הוסיפו את הנתונים של יער זה לעקומות ה-ROC מהסעיף הקודם.
+      a. שימו לב, כאשר אתם משתמשים בפונקציית predict, עליכם להגדיר את הפרמטר type בצורה מסויימת. איך?
+   4. בנו תרשים של חשיבות המשתנים. מה המשתנה/ים החשוב/ים ביותר בהשפעה על נטישת/נאמנות לקוחות?
+   5. נתבקשתם לבנות מודל שיציע הנחה ללקוחות מסוימים, כדי לצמצם את הנטישה. לאילו לקוחות תציעו הנחה ובאיזה סכום? השתמשו במשתנה monthlycharges כדי לקבוע את שיעור ההנחה (אחוז מתוך משתנה זה, ללקוחות הרלוונטיים).
 
-התאימו לפחות שלושה מודלים לחיזוי ומניעת נטישת לקוחות. המודלים יכולים להיות מסוגים שונים, או מאותם הסוגים עם משתנים שונים. 
+```
+# some help: 
+# first if you try to replicate the code from the diamond's example, you will get an error.
+# this is because randomForest expects no character variables, just numeric and factors.
+# So how can we turn everything character into factor?
+# Intuitively, you would probably do:
 
-נתחו את טיב המודלים באמצעות test/train ובחינה של סוגי הטעויות השונות במטריצת בלבול, ובתרשים ROC.
+# telco_churn <- telco_churn %>%
+#    mutate(gender = as.factor(gender),
+#           SeniorCitizen = as.factor(SeniorCitizen),
+#           ...)
+
+# but this is like doing the same action over and over again.
+# wouldn't it be nice to just loop over everything, and if a column is of the wrong type (character)
+# just convert it into factor?
+# mutate_if() does exactly that.
+# it needs a condition called .predicate, and a vector function to operate called .funs. 
+# It goes like this:
+
+telco_churn <- telco_churn %>%
+   mutate_if(.predicate = funs(typeof(.)=="character"), 
+             .funs = funs(as.factor(.)))
+
+# What does it do?
+# it's like looping
+# for (i in 1:NCOL(telco_churn)){
+#    if (typeof(telco_churn[,i]) == "character") {
+#       telco_churn[,i] <- as.factor(telco_churn[,i])
+#    }
+# }
+
+# the syntax of 
+# typeof(.) == "character"
+# is like "replace . with the vector you are currently checking"
+# the syntax of as.factor(.) is like
+# "replace . with the vector" that is a character and you need to type case into a factor
+# the funs() function makes the expression explicit after replacing the . with the current vector
+
+# now you can continue the exercise...
+```
+   
+```{r example for random forest, include = FALSE}
+library(randomForest)
+
+# the randomForest needs preprocessing of characters into factors
+telco_churn <- telco_churn %>%
+  mutate_if(.predicate = funs(typeof(.) == "character") , funs(as.factor(.)))
+
+# now build the forest, might take a while
+churn_forest <- randomForest(formula = factor(Churn) ~ . - is_train,
+                             data = telco_churn %>% filter(is_train),
+                             importance = TRUE,
+                             ntree = 500,
+                             na.action = na.omit)
+
+# show the first three trees
+head(getTree(churn_forest, k = 1, labelVar = TRUE), 100)
+head(getTree(churn_forest, k = 2, labelVar = TRUE), 100)
+head(getTree(churn_forest, k = 3, labelVar = TRUE), 100)
+
+# compute the confusion matrix - it uses the classification (majority) rule
+telco_churn_predicted <- telco_churn %>%
+  mutate(forest_churn_pred = predict(churn_forest, newdata = telco_churn, type = "response")) %>%
+  filter(!is_train) %>%
+  count(Churn, forest_churn_pred) %>%
+  filter(!is.na(forest_churn_pred)) %>%
+  group_by(Churn) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(forest_churn_pred, prop)
+# type-I error is 10.4%, type-II error is 48.4%.
+
+# variable importance chart
+varImpPlot(churn_forest)
+
+# compute prediction and ROC over test set
+telco_churn_roc_forest <- telco_churn %>%
+  mutate(probability_churn_forest = 
+           predict(churn_forest, newdata = telco_churn, type = "prob")[,2]) %>%
+  mutate(churn_numeric = Churn == "Yes") %>%
+  filter(!is_train) %>%
+  arrange(desc(probability_churn_forest)) %>%
+  mutate(tpr=cumsum(churn_numeric)/sum(churn_numeric),
+         fpr=cumsum(!churn_numeric)/sum(!churn_numeric)) %>%
+  mutate(model = "random forest")
+
+roc_prep <- telco_churn_roc %>%
+  bind_rows(telco_churn_roc_deep,
+            telco_churn_roc_glm,
+            telco_churn_roc_forest)
+
+ggplot(roc_prep, aes(x = fpr, y = tpr, color = model)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle("An ROC for our churn detection models") +
+  geom_abline(intercept = 0, slope = 1)
+
+
+# q5 of the question - offering a discount.
+
+# build a new classifier
+# omit the TotalCharges variable (tenure and MonthlyCharges already express the total charges)
+churn_detection <- glm(telco_churn %>% filter(!is_train),
+                       formula = Churn ~ . - is_train -TotalCharges,
+                       family = binomial)
+
+# add the predicted variable
+telco_discount <- telco_churn %>%
+  mutate(predicted_churn = predict(churn_detection, newdata = telco_churn, type = "response")) %>%
+  filter(!is_train)
+
+# nominal revenue for the next month:
+telco_discount %>% 
+  filter(Churn == "No") %>%
+  summarize(sum(MonthlyCharges))
+
+discount_rate <- 0.85
+discount_quantile <- 0.75
+pred_quantile <- as.numeric(quantile(telco_discount$predicted_churn, discount_quantile))
+
+telco_discount <- telco_discount %>% 
+  mutate(top25churn = predicted_churn >= pred_quantile) %>%
+  mutate(originalMonthlyCharges = MonthlyCharges) %>%
+  mutate(MonthlyCharges = 
+           ifelse(top25churn, originalMonthlyCharges*discount_rate, originalMonthlyCharges))
+
+telco_discount <- telco_discount %>%
+  mutate(predicted_churn_discount = 
+           predict(churn_detection, newdata = ., type = "response"))
+
+sum(telco_discount$predicted_churn_discount*telco_discount$MonthlyCharges)
+sum(telco_discount$predicted_churn*telco_discount$originalMonthlyCharges)
+  
+
+# The measure we are going to use is expected value. We are going to use the logistic regression
+# which is the best classifier here. 
+# first, we will omit the total charges (because they are related to tenure and monthly price), 
+# and build a new model (using a train/test split).
+# Using the test set we're going to modify the monthly charges of all users with the highest 25% chance of churning by offering a 15% discount, and see if it is profitable to offer these discounts.
+
+```
