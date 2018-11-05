@@ -470,15 +470,75 @@ Output f
 
 ### תרגיל
 
-השתמש בחבילת adabag, בפקודת `boosting` כדי לייצר חזאי לנטישת לקוחות.
+השתמשו בחבילת xgboost, בפקודת `boosting` כדי לייצר חזאי לנטישת לקוחות.
 הצגת התוצאות בתרשים ה-ROC. האם ביצוע boosting שיפר את החזאים?
 
-```{r boosting example using adabag}
-library(adabag)
+שימו לב, פקודת `xgboost` דורשת הכנה של מבנה הנתונים למטריצה. הנה קוד שיסייע לכם בהכנת המטריצה. השלימו את ה-XXX עם הפקודות / שמות משתנים המתאימים. שימו לב לשימוש ב-`mutate_all`, הדומה לפקודה שהשתמשנו בה קודם `mutate_if`.
 
-churn_boost <- adabag::boosting(formula = Churn ~ . - is_train,
-                                data = telco_churn %>% filter(is_train),
-                                control = rpart.control(cp = 0.1),
-                                mfinal = 50)
+```
+telco_churn_for_boost <- telco_churn %>%
+  filter(is_train) %>%
+  select(XXX:XXX)
+  
+dtrain <- xgb.DMatrix(telco_churn_for_boost %>%
+                        mutate_all(funs(as.numeric(XXX))) %>%
+                        select(-XXX) %>%
+                        as.matrix(), 
+                      label = XXX == XXX)
+
+```
+
+האם יש פרמטרים של העצים הנבנים במהלך אלגוריתם ה-boosting שאתם יכולים לשנות, כך שישפרו את החזאי?
+
+```{r boosting example using xgboost, include=FALSE}
+library(xgboost)
+
+telco_churn_for_boost <- telco_churn %>%
+  filter(is_train) %>%
+  select(gender:Churn)
+
+dtrain <- xgb.DMatrix(telco_churn_for_boost %>%
+                        mutate_all(funs(as.numeric(.))) %>%
+                        select(-Churn) %>%
+                        as.matrix(), 
+                      label = telco_churn_for_boost$Churn == "Yes")
+
+churn_boost <- xgboost::xgboost(data = dtrain, nrounds = 1000, 
+                                params = 
+                                  list(objective="binary:logistic",
+                                       booster="gbtree"))
+
+churn_boost_predict <- telco_churn %>%
+  select(gender:TotalCharges) %>%
+  mutate_all(funs(as.numeric(.))) %>%
+  as.matrix() %>%
+  predict(object = churn_boost, newdata = .)
+
+
+# compute prediction and ROC over test set
+telco_churn_roc_boost <- telco_churn %>%
+  mutate(probability_churn_boost = churn_boost_predict) %>%
+  mutate(churn_numeric = Churn == "Yes") %>%
+  filter(!is_train) %>%
+  arrange(desc(probability_churn_boost)) %>%
+  mutate(tpr=cumsum(churn_numeric)/sum(churn_numeric),
+         fpr=cumsum(!churn_numeric)/sum(!churn_numeric)) %>%
+  mutate(model = "boosting")
+
+roc_prep <- telco_churn_roc %>%
+  bind_rows(telco_churn_roc_deep,
+            telco_churn_roc_glm,
+            telco_churn_roc_forest,
+            telco_churn_roc_boost)
+
+ggplot(roc_prep, aes(x = fpr, y = tpr, color = model)) + 
+  geom_line() + 
+  xlab("False positive rate (1 - Specificity)") + 
+  ylab("True positive rate (Sensitivity)") + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle("An ROC for our churn detection models") +
+  geom_abline(intercept = 0, slope = 1)
+
 
 ```
