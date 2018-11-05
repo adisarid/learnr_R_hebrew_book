@@ -476,15 +476,23 @@ Output f
 שימו לב, פקודת `xgboost` דורשת הכנה של מבנה הנתונים למטריצה. הנה קוד שיסייע לכם בהכנת המטריצה. השלימו את ה-XXX עם הפקודות / שמות משתנים המתאימים. שימו לב לשימוש ב-`mutate_all`, הדומה לפקודה שהשתמשנו בה קודם `mutate_if`.
 
 ```
+# prepare the data
 telco_churn_for_boost <- telco_churn %>%
   filter(is_train) %>%
   select(XXX:XXX)
-  
+
 dtrain <- xgb.DMatrix(telco_churn_for_boost %>%
                         mutate_all(funs(as.numeric(XXX))) %>%
                         select(-XXX) %>%
                         as.matrix(), 
                       label = XXX == XXX)
+
+# building the boost predictor
+churn_boost <- xgboost::xgboost(data = dtrain, 
+                                nrounds = XXX, 
+                                params = 
+                                  list(objective=XXX,
+                                       booster=XXX))
 
 ```
 
