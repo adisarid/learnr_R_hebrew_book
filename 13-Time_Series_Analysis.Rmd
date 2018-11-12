@@ -1,0 +1,208 @@
+---
+title: "Data Science עם R - טיפול בסדרות עיתיות"
+author: "עדי שריד / adi@sarid-ins.co.il"
+output: html_document
+---
+```{css, echo=FALSE}
+p, h1, h2, h3, h4, ul, ol {
+  direction: rtl;
+}
+```
+
+סדרות עיתיות הן סוג אחר של בעיות ממה שטיפלנו בו עד כה. במובן מסוים הן שייכות לבעיות "supervised", אך בסדרות עיתיות המטרה אינה לחזות ערך $y$ בודד, אלא לחזות סדרה של ערכים בהתבסס על סדרה שקדמה להם.
+
+בסדרות עיתיות אנחנו מנסים להבין תופעות כגון עונתיות, ומגמות, כדי לנסות לחזות דברים שונים כגון:
+
+   * ביקוש למוצרי קמעונאות
+   * ביקוש למלאים כגון חלקי חילוף
+   * ביקוש לחשמל
+   * לידות
+   * התפרצות מחלות
+   * דפוסי חיפוש (כדוגמת google trends)
+   * ועוד.
+   
+ביחידה זו נשתמש בנתונים מנורמלים של חיפושי גוגל, ננתח, וננסה לפרש סדרות עיתיות עבור מונחי חיפוש כגון:
+
+   * [Data Science, Data mining, Machine learning](https://trends.google.com/trends/explore?date=all&q=%2Fm%2F0jt3_q3,%2Fm%2F0blvg,%2Fm%2F01hyh_)
+   * [Swimming pool](https://trends.google.com/trends/explore?date=all&geo=US&q=%2Fm%2F0b_rs)
+   * [Zombie](https://trends.google.com/trends/explore?date=all&geo=US&q=zombie)
+
+כמו כן נשתמש בנתוני פתיחה וסגירה של מניית [Tesla](https://finance.yahoo.com/quote/TSLA/history?period1=1384207200&period2=1541973600&interval=1d&filter=history&frequency=1d)
+
+
+
+פרק זה לא ידון רבות בתיאוריה של סדרות עיתיות, אך הקורא המעוניין מופנה לספר הבא, ספר המציג קצת תיאוריה והרבה פרקטיקה בנושא של סדרות עיתיות:
+
+<p style="direction:ltr; text-align:left">Forecasting: Principles and Practice, <em>OTexts</em> (2018?). J. Hyndman and G. Athanasopoulos, Available online: <a href="https://otexts.org/fpp2/">https://otexts.org/fpp2/</a>, (feched 12/11/2018).</p>
+
+## מה היא סדרה עיתית (Time Series)
+
+סדרה עיתית היא אוסף של תצפיות בעלי יחס סדר (התצפיות באות אחת אחרי השנה), במרווחי זמן **קבועים** (לדוגמה פעם בחודש).
+
+חיזוי סדרות עיתיות מעניין אותנו בכמה רמות: 
+
+   * קצר טווח - נדרש לדוגמה לתכנון כוח אדם, ייצור, תחבורה.
+   * טווח בינוני - נדרש כדי לקבוע דרישות למשאבים, כדי לרכוש חומרי גלם, להעסיק עובדים, או לרכוש ציוד.
+   * ארוך טווח - בתכנון אסטרטגי, לדוגמה לצורך זיהוי של מגמות שוק, ותהליכים ארוכי טווח.
+   
+תהליך העבודה עליו דיברנו תופס גם בעבודה עם סדרות עיתיות (יבוא הנתונים, סידור הנתונים, ויז'ואליזציה, מידול, חיזוי, והצגת הממצאים בפני מקבלי החלטות).
+
+הפעולה הראשונה בעבודה עם סדרה עיתית היא קריאת הסדרה והכנסתה לפורמט של סדרה עיתית `ts`.
+
+```{r read the zombie search data, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+zombie_raw <- read_csv("data-files/zombieTimeline.csv", skip = 3,
+                       col_names = c("Month", "search_volume"))
+glimpse(zombie_raw)
+
+# most of the time the data format will not be so nice, and you will have to consolidate data.
+# in this case we already get a year-month data ready. Just need to turn it into date.
+zombie_raw <- zombie_raw %>%
+  mutate(Month = lubridate::ymd(paste0(Month, "-01")))
+
+zombie_ts <- ts(zombie_raw$search_volume, start = 2004, frequency = 12)
+# frequency is super important, it will be used later on in our forecast algorithms.
+# Frequency can have values:
+# 1=Annual
+# 4=Quarterly
+# 12=Monthly
+# 52=Weekly
+# 60=Seconds
+# 24=Hourly
+# 7=Daily
+# You get the drift...
+
+# You can see that R prints the data in a nice table:
+zombie_ts
+
+# Here is the timeplot describing search volume of zombie
+ggplot(zombie_raw, aes(x = Month, y = search_volume)) + 
+  geom_line() + 
+  ggtitle("Google search volume for the word Zombie") + 
+  ylab("Google coefficient for search volume") + 
+  scale_x_date(date_breaks = "6 months") + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+התרשים הבא מציג את ה"עונות השונות" (כל שנה מהווה עונה). הוא מוצג כגרף ggplot2, אך בעצם מופעל מחבילת `forecast` שבה נשתמש בהמשך הפרק לויז'ואליזציה וכמו כן לבניית מודלים.
+
+```{r visualize seasonality}
+library(forecast)
+ggseasonplot(zombie_ts, year.labels = TRUE, year.labels.left = TRUE) + 
+  ylab("Search volume (google trend coefficient)") + 
+  ggtitle("Seasonal plot: the search for Zombies")
+# polar view
+ggseasonplot(zombie_ts, polar = TRUE) + 
+  ylab("Search volume (google trend coefficient)") + 
+  ggtitle("Seasonal plot: the search for Zombies")
+
+```
+
+
+מעיון בתרשימים עולה תמונה של עליה של החיפושים של המונח עד שנת 2011, והחל משנת 2012, עונתיות שנתית (שיא בחיפושים סביב חודש אוקטובר). למה?
+
+כמו כן, יש שיא מקומי בחודש יוני של שנת 2012.
+
+כמו כן, ישנה היחלשות מסוימות בעוצמת החיפושים (הפיקים הולכים וקטנים בשנים האחרונות).
+
+מקובל גם לבחון את הקורלציה בין תצפיות לאורך זמן.
+
+```{r zombie autocorrelation}
+ggAcf(zombie_ts, lag = 48)
+```
+
+התרשים מציג קורלציה גבוהה יחסית בין חודש לחודשים שקדמו לו, וגם בין חודש לבין אותו החודש שנה לפני (12 חודשים אחורה). מעבר לקשר של 12 חודשים אחורה, הקשר הולך ונחלש, וכמעט נעלם לאחר 25 חודשים.
+
+כעת נרצה להשתמש בפקודה שתתאים מודל שיתפוס את העונתיות מחד, ואת המגמה מאידך.
+
+המודלים הנאייביים ביותר הם:
+
+   * ממוצע היסטורי פשוט
+   * ערך התצפית האחרונה
+   * ערך תצפית אחרונה 12 חודשים אחורה (לפי העונתיות)
+   
+```{r naive models}
+autoplot(zombie_ts) +
+  autolayer(meanf(zombie_ts, h=24),
+    series="Mean", PI=FALSE) +
+  autolayer(naive(zombie_ts, h=24),
+    series="Naive", PI=FALSE) +
+  autolayer(snaive(zombie_ts, h=24),
+    series="Seasonal naive", PI=FALSE) +
+  ggtitle("Forecasts for zombie searches") +
+  xlab("Year") + ylab("Zombie searches") +
+  guides(colour=guide_legend(title="Forecast")) 
+# With confidence intervals using the seasonal naive model:
+autoplot(zombie_ts) +
+  autolayer(snaive(zombie_ts, h=24),
+    series="Seasonal naive", PI=TRUE) +
+  ggtitle("Forecasts for zombie searches - with confidence intervals") +
+  xlab("Year") + ylab("Zombie searches") +
+  guides(colour=guide_legend(title="Forecast")) 
+```
+
+מעבר למודלים הבסיסיים שהוצגו לעיל, ישנן עוד שתי משפחות של מודלים מתקדמים יותר:
+
+   * מודלים המבוססים על החלקה אקספוננציאלית (Exponential smoothing)
+   * מודלים המבוססים על רגרסיה עצמית (ARIMA, Autoregressive integrated moving average) - עליהם לא נדון בפרק זה.
+   
+משפחת המודלים מסוג החלקה אקספוננציאלית מבוססים על הרעיון שכל תצפית עתידית מבוססת על ממוצע משוקלל (החלקה) של תצפיות קודמות. ייתכן שממוצע זה מורכב מרכיבים מיוחדים (כגון מגמה, או עונתיות).
+
+\[
+\hat{y}_{T+1|T}=\alpha y_T + \alpha(1-\alpha)y_{T-1}+\alpha(1-\alpha)^2y_{T-1}+\ldots
+\]
+
+הפרמטר $\alpha$ הוא פרמטר ההחלקה.
+
+פקודת `ets` מבצעת התאמה של הסדרה העיתית לאחד מ-18 משפחות הכוללות סוגים שונים של מודלים דומים (טרנדים, עונתיות, ושגיאות חיבוריות וכפליות)
+
+```{r running ets}
+zombie_ets <- ets(zombie_ts)
+summary(zombie_ets)
+autoplot(zombie_ets)
+```
+
+המודל המיטבי הינו מודל בעל שגיאה כפלית, עונתיות כפלית, וללא טרנד. שימו לב שהמודל עשוי להשתנות, כתלות באורך הסדרות (התצפיות) שמזינים לתוכו.
+
+```{r running ets}
+zombie_ets_3yrs <- ets(tail(zombie_ts, 36))
+summary(zombie_ets_3yrs)
+autoplot(zombie_ets_3yrs)
+```
+
+כדי לספק את המודל, פונקציית ets מבצעת Best Fit בהתבסס על מדד log-liklihood.
+
+באמצעות פונקציית `predict`, ניתן לספק תחזית.
+
+```{r predicting based on ets}
+zombie_prediction <- predict(zombie_ets, h = 36)
+autoplot(zombie_prediction)
+```
+
+כדי לבחון את מידת הדיוק של המודלים, מדווחת הפונקציה `ets` על מספר סוגי שגיאה.
+
+   * ME = Mean error
+   * RMSE = Root mean square error
+   * MAE = Mean absolute error
+   * MPE = Mean percentage error
+   * MAPE = Mean absolute percentage error
+   * MASE = Mean absolute scaled error 
+   * ACF1 = Autocorrelation of errors at lag 1
+
+***
+
+### תרגיל
+
+   1. בחרו אחד מקבצי הנתונים שמוצגים בתחילת הפרק, שאינם קשורים בזומבים, כלומר
+      a. נתוני חיפוש על בריכות שחייה, או
+      b. נתוני חיפוש על Data science, או Data mining, או Machine learning, או
+      c. נתונים על מניות חברת Tesla.
+   2. הציגו את הנתונים בתרשים מתאים - האם אתם מזהים דפוס עונתי או מגמה?
+   3. התאימו מודל ets, אילו דפוסים מזהה המודל?
+   4. בכל התרגילים שעסקו ב-Supervised learning השתמשנו בחלוקה ל-Train/test.
+      a. חשבו - מה החלוקה המקבילה בבעית סדרות עיתיות? כיצד ניתן לחלק סדרה ל-Train/test ולבחון את שיטת החישוב?
+      b. בצעו חלוקה ל-Train/test והעריכו את ביצועי המודלים שפיתחתם לעומת ביצועיהם של מודלים נאיביים. לצורך חישובים אלו, באפשרותכם להשתמש בפונקציה `accuracy` מתוך חבילת `forecast`.
+
+
+***
