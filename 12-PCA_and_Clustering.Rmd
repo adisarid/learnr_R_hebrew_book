@@ -40,7 +40,7 @@ p, h1, h2, h3, h4, ul, ol {
 
 אם אנחנו בוחרים תת-קבוצה של צירים אלו, המשמעות היא שאנחנו בוחרים תת-קבוצה שמסבירה "X% מהשונות שיש בנתונים".
 
-```{r diamonds pca example, messages=FALSE, warning=FALSE, fig.width=5, fig.height=3}
+```{r iris pca example, messages=FALSE, warning=FALSE, fig.width=5, fig.height=3}
 library(tidyverse)
 
 # lets try to reduce the dimension of the iris dataset
@@ -315,7 +315,7 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) + geom_point()
 
 ***
 
-### תרגיל
+#### תרגיל
 
    1. השתמש ב-`kmeans` כדי לבנות קבוצות שונות של מטופלים בקובץ המטופלים. לשם כך השתמש במשתני ה-0-1 לא כולל ה-no-show. בחנו מספר אפשרויות שונות לערכי k.
    2. האם אתם מזהים מאפיינים כלשהם לקבוצות? לדוגמה האם הקבוצות מאובחנות ביניהן בפרמטרים מסוימים (יכול להיות פרמטרים שנכנסו למודל ה-KMeans או פרמטרים אחרים כגון גיל/מגדר שלא היו חלק מהחלוקה ל-KMeans).
@@ -377,3 +377,133 @@ ggplot(appointments_cluster, aes(Age)) +
   facet_wrap(~ kmeans3_cluster)
 
 ```
+
+### חלוקה לאשכולות בשיטת Hierarchical Clustering
+
+שיטה זו משתמשת בעקרונות שונים משיטת KMeans clustering. במקום לחפש "מרכזי מסה", ואז לסווג אילו תצפיות שייכות לכל מרכז מסה, השיטה ההירארכית מחפשת בכל נקודה אילו תצפיות "למזג" אחת לשניה לקבוצה אחת.
+
+   1. התחל עם $n$ תצפיות ופונקצית מרחק בין כל שתי תצפיות. סה"כ ישנם $n*(n-1)/2$ מרחקים אפשריים. כל תצפית נחשבת לאשכול (האלגוריתם מתחיל עם $n$ אשכולות).
+   2. כל עוד מספר האשכולות גדול מ-1 בצע את הצעדים הבאים:
+      a. בדוק את כל המרחקים בין האשכולות הקיימים. בחר את שני האשכולות שהכי קרובים זה לזה. מזג את שני האשכולות הללו. המרחק ביניהם ישמש אותנו כמדד ל"אי-הדימיון" ביניהם.
+      b. חשב מחדש את המרחקים בין כל האשכולות, לפי פונקציית מרחק בין-אשכולות.
+
+האלגוריתם המתואר פועל בשיטת bottom-up (מתחיל מהתצפית הבודדת). ישנם אלגוריתמים הפועלים בשיטה הפוכה (פיצול).
+
+בהתייחס לשלב 2b באלגוריתם, ישנן פונקציות מרחק שונות. בדומה ל-KMeans אפשר להשתמש במרחק בין נקודות מרכז מסה (centroid), אך אפשר גם להשתמש במרחק בין שתי הנקודות הקרובות ביותר (single linkage), במרחק הממוצע (average linkage), ובמרחק מירבי (complete linkage).
+
+```{r hierarchical clustering with iris}
+
+# prepare the dataset with observation numbering
+iris_prep <- iris %>% 
+  mutate(obs = paste0(seq_along(Species), "-", Species)) %>%
+  column_to_rownames("obs") %>%
+  select(-Species)
+
+# compute the distance matrix
+iris_dist <- dist(iris_prep, method = "euclidean")
+
+# generate the h-clustering
+iris_clust <- hclust(iris_dist, method = "complete")
+
+# We can generate the default plot which shows the tree
+plot(iris_clust)
+
+# The following will show us the order in which observations were merged:
+iris_clust$order
+
+# The height object shows us a measure for the dissimilarity between the merged clusters
+iris_clust$height
+
+# We can even cut the tree at a specific height or a specific number of clusters
+cutree(iris_clust, k = 3)
+cutree(iris_clust, h = 1)
+
+# For better visualizations, here is a ggplot2 wrapper, also visualizing single and average linkage
+#install.packages("ggdendro")
+library(ggdendro)
+ggdendrogram(hclust(iris_dist, method = "complete"))
+ggdendrogram(hclust(iris_dist, method = "average"))
+ggdendrogram(hclust(iris_dist, method = "single"))
+
+```
+
+שיטה זו דורשת כוח חישוב חזק, משום שנדרש לחשב בה פונקציית מרחק בין נקודות רבות, לעומת KMeans (שם המרחק מחושב רק מ"מרכזי מסה").
+
+***
+
+#### תרגיל
+
+   1. באמצעות פונקציית `sample_n` דגמו 5,000 תצפיות מקובץ הנתונים של המטופלים (למה מדגם ולא כולם?)
+   2. בצעו קיבוץ ל-3 אשכולות באמצעות אלגוריתם hierarchical clustering, השוו את תוצאות קיבוץ זה למול הקיבוץ שנתקבל בתרגיל הקודם באמצעות אלגוריתם KMeans. האם הקיבוצים נותנים תוצאות דומות או שונות?
+      a. זכרו! אם אתם משתמשים במשתנה Age, מומלץ לנרמל אותו, לדוגמה באמצעות הפונקציה `scale`.
+      b. אם אתם משתמשים בפונקציה `scale` השתמשו גם בפונקציה `as.numeric` כדי להפוך את התוצאה לוקטורית ולא לרשימה.
+   3. לצורך ההשוואה בסעיף הקודם, מומלץ לבדוק מספר פונקציות Linkage (נניח complete, single, average).
+   4. איזה סוג קיבוץ מצליח ליצור קבוצות המובחנות זו מזו בהיבט המשתנים הדמוגרפיים מגדר וגיל?
+      
+```
+# If you decide to use Age, don't forget to scale it otherwise it might pull all the results in unwanted direction - it will have a lot of weight on the Euclidean distance function
+# You can either scale using the scale function (it uses mean and standard deviation) or scale to 0-1 range.
+
+appointments_sample <- appointments %>%
+   sample_n(5000) %>%
+   select(Age, Scholarship:SMS_received) %>%
+   mutate(age_scaled = as.numeric(scale(Age))) %>%
+   select(-Age)
+
+# another option is to use a 0-1 scaling as follows
+appointments_sample <- appointments %>%
+   sample_n(5000) %>%
+   select(Age, Scholarship:SMS_received) %>%
+   mutate(age_scaled = (Age - min(Age))/(max(Age)-min(Age))) %>%
+   select(-Age)
+
+# Now continue to use dist() and hclust() as in the example above.
+
+```
+
+```{r comparison hierarchical vs KMeans, include=FALSE}
+
+appointments_sample <- appointments %>%
+  mutate(kmeans3_cluster = appointments_kmeans3$cluster) %>%
+  sample_n(10000) %>%
+  mutate(age_scaled = (Age - min(Age))/(max(Age)-min(Age)))
+
+appointments_dist <- dist(appointments_sample %>%
+                            select(Scholarship:SMS_received, age_scaled),
+                          method = "euclidean")
+# single linkage
+appointments_hclust <- hclust(appointments_dist, method = "single")
+appointments_sample <- appointments_sample %>%
+  mutate(hclust3 = cutree(appointments_hclust, k = 3))
+appointments_sample %>%
+  count(hclust3, kmeans3_cluster) %>%
+  group_by(hclust3) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(kmeans3_cluster, prop, fill = 0)
+
+# average linkage
+appointments_hclust <- hclust(appointments_dist, method = "average")
+appointments_sample <- appointments_sample %>%
+  mutate(hclust3 = cutree(appointments_hclust, k = 3))
+appointments_sample %>%
+  count(hclust3, kmeans3_cluster) %>%
+  group_by(hclust3) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(kmeans3_cluster, prop, fill = 0)
+
+# complete linkage
+appointments_hclust <- hclust(appointments_dist, method = "complete")
+appointments_sample <- appointments_sample %>%
+  mutate(hclust3 = cutree(appointments_hclust, k = 3))
+appointments_sample %>%
+  count(hclust3, kmeans3_cluster) %>%
+  group_by(hclust3) %>%
+  mutate(prop = n/sum(n)) %>%
+  select(-n) %>%
+  spread(kmeans3_cluster, prop, fill = 0)
+
+```
+
+***
