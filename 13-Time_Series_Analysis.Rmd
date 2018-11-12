@@ -165,7 +165,7 @@ autoplot(zombie_ets)
 
 המודל המיטבי הינו מודל בעל שגיאה כפלית, עונתיות כפלית, וללא טרנד. שימו לב שהמודל עשוי להשתנות, כתלות באורך הסדרות (התצפיות) שמזינים לתוכו.
 
-```{r running ets}
+```{r running ets three years}
 zombie_ets_3yrs <- ets(tail(zombie_ts, 36))
 summary(zombie_ets_3yrs)
 autoplot(zombie_ets_3yrs)
