@@ -1,7 +1,9 @@
 ---
 title: "Data Science עם R - פרק מבוא"
 author: "עדי שריד"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{css, echo=FALSE}
@@ -148,12 +150,13 @@ time_spent_gathered
 ggplot(time_spent_gathered, aes(x = 
                                   factor(activity, # set the x
                                            levels = kaggle_scheme$Column[221:226]), # levels to set order
-                                y = percent)) + # set the y
+                                y = percent/100)) + # set the y
   geom_boxplot(fill = "lightblue") + # tell ggplot we want a "boxplot" figure, and with lightblue color
   ylab("Percent [%]") +  # the caption for y-axis
   xlab("Activity type") +  # the caption for x-axis
-  coord_cartesian(y = c(0, 100)) + # trim the y axis to avoid some errors (the data set has errors)
-  theme(axis.text.x = element_text(angle = 15, size = 14)) # adjust the angle for x-ticks
+  coord_cartesian(y = c(0, 1)) + # trim the y axis to avoid some errors (the data set has errors)
+  theme(axis.text.x = element_text(angle = 0, size = 12)) + # adjust the angle for x-ticks
+  scale_y_continuous(labels = scales::percent)   
 
 ```
 

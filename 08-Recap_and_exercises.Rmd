@@ -487,7 +487,7 @@ sum(c(diamonds_lc_resid, diamonds_hc_resid)^2)
 sum(  (test_price_lm - diamonds$price[!diamonds$is_train])  ^2  )
                           
 ```
-```{r splitting to two models, include = FALSE}
+```
 
 diamonds <- diamonds %>%
                mutate(high_clarity = clarity %in% c("VVS2", "VVS1", "IF"))

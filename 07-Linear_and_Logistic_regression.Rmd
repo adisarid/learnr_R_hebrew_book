@@ -214,7 +214,7 @@ summary(pca1)
 
 # to retreive the variables use
 pca1_use <- predict(pca1, newdata = no_show_appointments %>% select(-Age) %>% filter(!is_train))
-glimpse(pca1_use)
+#glimpse(pca1_use)
 # now you can continue to work with pca1_use as your data set
 
 # If you add age, you will see that it becomes the most significant element (PC1)
