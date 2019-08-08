@@ -148,7 +148,7 @@ ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +
 הקובץ נוצר באמצעות scraping, טכניקה שבאמצעותה סורקים אתרים ומחלצים מתוכם נתונים לתוך מבנה מסודר וטבלאי, כפי שנמצא בקובץ.
 
 להורדת הקובץ ניתן להיכנס לקישור הבא:
-[https://github.com/adisarid/learnr_R_hebrew_book/blob/master/data-files/googleplaystore.csv](https://github.com/adisarid/learnr_R_hebrew_book/blob/master/data-files/googleplaystore.csv)
+[https://raw.githubusercontent.com/adisarid/learnr_R_hebrew_book/master/data-files/googleplaystore.csv](https://raw.githubusercontent.com/adisarid/learnr_R_hebrew_book/master/data-files/googleplaystore.csv)
 
 אנו נשתמש בקובץ זה כדי לתרגל צורות שונות של ויז'ואליזציה. 
 כדי להקל על ההתחלה של השימוש ב-R, חלק מהפקודות כבר ישנן, ועליכם להשלים את הפרמטרים המתאימים במקומות שבהם ישנו XXX. ככל שנתקדם בתרגילים, יותר חלקים יהיו חסרים (עד לשלב שבו לא יהיו פקודות, ותצטרכו לכתוב הכל בעצמכם).
@@ -370,11 +370,13 @@ Help -> Cheetsheets -> Data Visualization with ggplot2
 קראו את הקובץ של נטישת לקוחות Telco, הקובץ הורד מהאתר של IBM בכתובת:
 [https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
 
+במידה וקישור זה אינו זמין, ניתן להוריד את הקובץ גם בקישור הבא: [https://raw.githubusercontent.com/adisarid/learnr_R_hebrew_book/master/data-files/WA_Fn-UseC_-Telco-Customer-Churn.csv](https://raw.githubusercontent.com/adisarid/learnr_R_hebrew_book/master/data-files/WA_Fn-UseC_-Telco-Customer-Churn.csv)
+
 אגב ניתן לקרוא את הקובץ ישירות על ידי שימוש בפקודה:
 
 ```{r read telco}
 
-telco_churn <- read_csv("https://community.watsonanalytics.com/wp-content/uploads/2015/03/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+telco_churn <- read_csv("https://raw.githubusercontent.com/adisarid/learnr_R_hebrew_book/master/data-files/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
 glimpse(telco_churn)
 
